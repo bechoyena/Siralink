@@ -69,11 +69,22 @@ bot.action(/^get_prod_(.+)$/, async (ctx) => {
       return ctx.reply('በዚህ ምድብ ውስጥ በአሁኑ ሰዓት ምንም ዕቃ የለም።', Markup.inlineKeyboard([backToMain]));
     }
 
+// ዕቃዎችን በፎቶ እና በዝርዝር ማሳየት
     for (let item of res.rows) {
-      const txt = `🛍 ${item.name}\n💰 ዋጋ: ${item.price} ብር\nℹ️ መግለጫ: ${item.description}`;
-      await ctx.reply(txt, Markup.inlineKeyboard([
-        [Markup.button.callback(`🛒 አሁን እዘዝ (Order)`, `order_item_${item.id}`)]
-      ]));
+      const txt = `🛍 *${item.name}*\n💰 ዋጋ: ${item.price} ብር\nℹ️ መግለጫ: ${item.description}`;
+      
+      // ፎቶ ካለው በፎቶ፣ ከሌለው በጽሁፍ ብቻ ይልካል
+      if (item.image_url) {
+        await ctx.replyWithPhoto(item.image_url, {
+          caption: txt,
+          parse_mode: 'Markdown',
+          ...Markup.inlineKeyboard([[Markup.button.callback(`🛒 አሁን እዘዝ (Order)`, `order_item_${item.id}`)]])
+        });
+      } else {
+        await ctx.reply(txt, Markup.inlineKeyboard([
+          [Markup.button.callback(`🛒 አሁን እዘዝ (Order)`, `order_item_${item.id}`)]
+        ]));
+      }
     }
   } catch (err) {
     console.error(err);
