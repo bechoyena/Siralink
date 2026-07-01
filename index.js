@@ -5,7 +5,7 @@ const express = require('express');
 // ቦት እና ዳታቤዝ ኮኔክሽን መክፈቻ
 const bot = new Telegraf('8577893575:AAE0YpDFrK8GgYBP46uqTRsdM6zGkpec1kU');
 const pool = new Pool({
-  connectionString:DATABASE_URL,
+  connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
 
