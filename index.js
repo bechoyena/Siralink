@@ -1,13 +1,8 @@
 const express = require('express');
 const { Telegraf, Markup } = require('telegraf');
-const { Pool } = require('pg');
 
-// ቦት እና ዳታቤዝ ኮኔክሽን መክፈቻ
+// ቦት መክፈቻ
 const bot = new Telegraf('8577893575:AAE0YpDFrK8GgYBP46uqTRsdM6zGkpec1kU');
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
-});
 
 // Render እንዳይዘጋ መከላከያ ዌብ ሰርቨር
 const app = express();
@@ -20,14 +15,45 @@ app.listen(PORT, '0.0.0.0', () => {
 });
 
 // ==========================================
+// 🛍 2. የእቃዎች መጋዘን (PRODUCTS DATA)
+// ናርዶስ፣ አዲስ እቃ ለመጨመር እዚህ በታች ባሉት ቅንፎች { } ውስጥ ጨምር
+// የምድብ (category) ስሞች መሆን ያለባቸው፦ 'clothes', 'men', 'shoes', ወይም 'elec' ነው
+// ==========================================
+const products = [
+  {
+    id: 1,
+    name: 'ያማረ የሴቶች የሐበሻ ቀሚስ',
+    price: 3500,
+    description: 'በእጅ ጥልፍ የተሰራ፣ ጥራት ካለው ማግ የተዘጋጀ።',
+    category: 'clothes',
+    image_url: 'https://postimages.org/ የምታገኘውን የፎቶ ሊንክ እዚህ ታስገባለህ.jpg'
+  },
+  {
+    id: 2,
+    name: 'የወንዶች ዘመናዊ ሱፍ',
+    price: 6000,
+    description: 'ለሰርግ እና ለተለያዩ ፕሮግራሞች የሚሆን ሙሉ ሱፍ።',
+    category: 'men',
+    image_url: 'https://example.com/suit.jpg'
+  },
+  {
+    id: 3,
+    name: 'ስማርት ሰዓት (Smart Watch Series 9)',
+    price: 2500,
+    description: 'ቻርጅ ለረጅም ጊዜ የሚይዝ፣ የልብ ትርታ የሚለካ።',
+    category: 'elec',
+    image_url: 'https://example.com/watch.jpg'
+  }
+];
+
+// ==========================================
 // 🚀 1. ዋናው ማውጫ (MAIN MENU)
 // ==========================================
-// ናርዶስ፣ እዚህ ጋር "ስለ እኛ" በተንን ጨምሬዋለሁ
 const mainKeyboard = Markup.inlineKeyboard([
   [Markup.button.callback('🛍 አዳዲስ ዕቃዎችን ይግዙ (ከሱቆች)', 'shop_main')],
   [Markup.button.callback('🏠 የሚከራይ ቤትና ዶርም ፈልግ', 'house_main')],
   [Markup.button.callback('🔄 ያገለገሉ ዕቃዎችን ይግዙ/ይሽጡ', 'used_main')],
-  [Markup.button.callback('ℹ️ ስለ እኛ', 'about_us_main')] // አዲሱ በተን
+  [Markup.button.callback('ℹ️ ስለ እኛ', 'about_us_main')]
 ]);
 
 bot.start((ctx) => {
@@ -37,7 +63,6 @@ bot.start((ctx) => {
   );
 });
 
-// ወደ ዋናው ማውጫ መመለሻ በተን
 const backToMain = [Markup.button.callback('🔙 ወደ ዋናው ማውጫ', 'back_to_main')];
 
 bot.action('back_to_main', (ctx) => {
@@ -46,7 +71,7 @@ bot.action('back_to_main', (ctx) => {
 
 
 // ==========================================
-// 🛍 2. የሱቆች ክፍል (E-COMMERCE)
+// 🛍 2. የሱቆች ክፍል (E-COMMERCE RESPONSE)
 // ==========================================
 bot.action('shop_main', (ctx) => {
   return ctx.editMessageText(
@@ -59,36 +84,33 @@ bot.action('shop_main', (ctx) => {
   );
 });
 
-// ከዳታቤዝ ላይ ዕቃዎችን ስቦ ማሳያ
-// 💡 አዳዲስ የምርት ምድቦችን በኮድህ ለመጨመር ከፈለግክ እዚህ በታች ባለው 'clothes', 'men' ወዘተ አጠገብ አዲስ ስም መጨመር ትችላለህ
+// ከተቀመጠው ዝርዝር ላይ ዕቃዎችን ፈልጎ በፎቶ ማሳያ
 bot.action(/^get_prod_(.+)$/, async (ctx) => {
   const category = ctx.match[1];
-  try {
-    const res = await pool.query('SELECT * FROM products WHERE category = $1', [category]);
-    if (res.rows.length === 0) {
-      return ctx.reply('በዚህ ምድብ ውስጥ በአሁኑ ሰዓት ምንም ዕቃ የለም።', Markup.inlineKeyboard([backToMain]));
-    }
+  
+  // ከተቀመጠው ዝርዝር ውስጥ ከተመረጠው ምድብ ጋር እኩል የሆኑትን መምረጥ
+  const filteredProducts = products.filter(p => p.category === category);
 
-// ዕቃዎችን በፎቶ እና በዝርዝር ማሳየት
-    for (let item of res.rows) {
-      const txt = `🛍 *${item.name}*\n💰 ዋጋ: ${item.price} ብር\nℹ️ መግለጫ: ${item.description}`;
-      
-      // ፎቶ ካለው በፎቶ፣ ከሌለው በጽሁፍ ብቻ ይልካል
-      if (item.image_url) {
-        await ctx.replyWithPhoto(item.image_url, {
-          caption: txt,
-          parse_mode: 'Markdown',
-          ...Markup.inlineKeyboard([[Markup.button.callback(`🛒 አሁን እዘዝ (Order)`, `order_item_${item.id}`)]])
-        });
-      } else {
-        await ctx.reply(txt, Markup.inlineKeyboard([
-          [Markup.button.callback(`🛒 አሁን እዘዝ (Order)`, `order_item_${item.id}`)]
-        ]));
-      }
+  if (filteredProducts.length === 0) {
+    return ctx.reply('በዚህ ምድብ ውስጥ በአሁኑ ሰዓት ምንም ዕቃ አልተመዘገበም።', Markup.inlineKeyboard([backToMain]));
+  }
+
+  // እቃዎቹን በፎቶ እና በዝርዝር መላክ
+  for (let item of filteredProducts) {
+    const txt = `🛍 *${item.name}*\n💰 ዋጋ: ${item.price} ብር\nℹ️ መግለጫ: ${item.description}`;
+    
+    // የፎቶ ሊንክ ካለው በፎቶ፣ ከሌለው በፅሁፍ ብቻ ይልካል
+    if (item.image_url && item.image_url.startsWith('http')) {
+      await ctx.replyWithPhoto(item.image_url, {
+        caption: txt,
+        parse_mode: 'Markdown',
+        ...Markup.inlineKeyboard([[Markup.button.callback(`🛒 አሁን እዘዝ (Order)`, `order_item_${item.id}`)]])
+      });
+    } else {
+      await ctx.reply(txt, Markup.inlineKeyboard([
+        [Markup.button.callback(`🛒 አሁን እዘዝ (Order)`, `order_item_${item.id}`)]
+      ]));
     }
-  } catch (err) {
-    console.error(err);
-    ctx.reply('ስህተት አጋጥሟል፣ እባክዎ ቆይተው ይሞክሩ።');
   }
 });
 
@@ -108,23 +130,9 @@ bot.action('house_main', (ctx) => {
   );
 });
 
-bot.action(/^get_house_(.+)$/, async (ctx) => {
-  const type = ctx.match[1];
-  try {
-    const res = await pool.query('SELECT * FROM houses WHERE type = $1', [type]);
-    if (res.rows.length === 0) {
-      return ctx.reply('በዚህ ምድብ የሚከራይ ቤት በአሁኑ ሰዓት የለም።', Markup.inlineKeyboard([backToMain]));
-    }
-
-    for (let house of res.rows) {
-      const txt = `🏠 የቤት አይነት: ${house.type}\n📍 አድራሻ: ${house.location}\n💰 የኪራይ ዋጋ: ${house.price} ብር/በወር`;
-      await ctx.reply(txt, Markup.inlineKeyboard([
-        [Markup.button.callback('📞 የአከራዩን ስልክ ቁጥር እይ', `unlock_house_${house.id}`)]
-      ]));
-    }
-  } catch (err) {
-    console.error(err);
-  }
+// ለጊዜው ቤቶች በኮድ ስለሌሉ የሚሰጠው ምላሽ
+bot.action(/^get_house_(.+)$/, (ctx) => {
+  return ctx.reply('በአሁኑ ሰዓት በዚህ ምድብ የተመዘገበ ተከራይ ቤት የለም። አከራዮች መረጃ እንዲያስገቡ እየተደረገ ነው።', Markup.inlineKeyboard([backToMain]));
 });
 
 
@@ -142,20 +150,8 @@ bot.action('used_main', (ctx) => {
   );
 });
 
-bot.action('view_used', async (ctx) => {
-  try {
-    const res = await pool.query('SELECT * FROM used_items ORDER BY created_at DESC LIMIT 10');
-    if (res.rows.length === 0) {
-      return ctx.reply('ምንም ያገለገሉ እቃዎች አልተመዘገቡም።', Markup.inlineKeyboard([backToMain]));
-    }
-
-    for (let item of res.rows) {
-      const txt = `🔄 ያገለገለ ዕቃ: ${item.title}\n💰 ዋጋ: ${item.price} ብር\n📱 የሻጭ ስልክ: ${item.phone}`;
-      await ctx.reply(txt);
-    }
-  } catch (err) {
-    console.error(err);
-  }
+bot.action('view_used', (ctx) => {
+  return ctx.reply('ምንም ያገለገሉ እቃዎች አልተመዘገቡም።', Markup.inlineKeyboard([backToMain]));
 });
 
 bot.action('sell_instruction', (ctx) => {
@@ -163,12 +159,12 @@ bot.action('sell_instruction', (ctx) => {
 });
 
 bot.command('sell', (ctx) => {
-  ctx.reply('እባክዎን እቃዎን ለመመዝገብ መረጃውን በዚህ መልክ ይላኩ፦\n\n*የዕቃው ስም - ዋጋ - ስልክ ቁጥር*\n\nለምሳሌ፦ HP ላፕቶፕ - 25000 - 0911223344');
+  ctx.reply('እባክዎን እቃዎን ለመመዝገብ መረጃውን በዚህ መልክ ይላኩ፦\n\n*የዕቃው ስም - ዋጋ - ስልክ ቁጥር*\n\nለምчнее፦ HP ላፕቶፕ - 25000 - 0911223344');
 });
 
 
 // ==========================================
-// ℹ️ 5. አዲሱ "ስለ እኛ" በተን ምላሽ (ABOUT US)
+// ℹ️ 5. "ስለ እኛ" በተን ምላሽ (ABOUT US)
 // ==========================================
 bot.action('about_us_main', (ctx) => {
   const aboutText = `ℹ️ *ስለ Siralink ሁለገብ ማርኬት*\n\n` +
@@ -192,17 +188,13 @@ bot.action(/^order_item_(.+)$/, (ctx) => {
   ctx.reply('🛍 እቃውን ለማዘዝ ስምዎትን እና ያሉበትን ትክክለኛ አድራሻ ይጻፉልን። የሱቁ ባለቤት በውስጥ መስመር ያገኝዎታል።');
 });
 
-bot.action(/^unlock_house_(.+)$/, (ctx) => {
-  ctx.reply('🔒 የአከራዩን ስልክ ቁጥር ለማየት 10 ብር በCBE ባንክ (1000686191668) ከፍለው የደረሰኙን ፎቶ (Screenshot) @ad_is17 @ad_is1 ይላኩ።');
-});
-
 // ቦቱን ማስነሳት
 bot.launch({
   polling: {
     dropPendingUpdates: true
   }
 }).then(() => {
-  console.log('ሁለገብ ማርኬት ቦት 100% አዲሱን ገጽታ ይዞ ተነስቷል! 🚀');
+  console.log('ሁለገብ ማርኬት ቦት 100% ከዳታቤዝ ነጻ ሆኖ ተነስቷል! 🚀');
 }).catch((err) => {
   console.error('ቦቱን በማስነሳት ላይ ስህተት፦', err);
 });
