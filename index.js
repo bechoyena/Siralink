@@ -196,8 +196,15 @@ bot.action(/^order_item_(.+)$/, (ctx) => {
 const secretPath = `/telegraf/${bot.secretWithToken()}`;
 app.use(bot.webhookCallback(secretPath));
 
-// የ Render ሊንክህን እዚህ ጋር በራስ-ሰር ያገኘዋል
-const RENDER_URL = process.env.RENDER_EXTERNAL_URL || 'https://siralink-pro.onrender.com';
+// ==========================================
+// 🚀 የቦት ማስነሻ በዌብሁክ (WEBHOOK CONFIGURATION FOR RENDER)
+// ==========================================
+
+const secretPath = `/telegraf/${bot.secretWithToken()}`;
+app.use(bot.webhookCallback(secretPath));
+
+// ናርዶስ፣ ያንተን እውነተኛ የRender ሊንክ እዚህ ጋር በቀጥታ አስገብቼዋለሁ!
+const RENDER_URL = 'https://siralink-pro.onrender.com';
 
 bot.telegram.setWebhook(`${RENDER_URL}${secretPath}`)
   .then(() => {
@@ -206,11 +213,6 @@ bot.telegram.setWebhook(`${RENDER_URL}${secretPath}`)
   .catch((err) => {
     console.error('ዌብሁክን በማገናኘት ላይ ስህተት አጋጥሟል፦', err);
   });
-
-// የድሮውን bot.launch() ሙሉ በሙሉ አጥፍተነዋል!
-// ሰርቨሩ Render ላይ እንዳይዘጋ መከላከያ
-process.once('SIGINT', () => bot.stop('SIGINT'));
-process.once('SIGTERM', () => bot.stop('SIGTERM'));;
 
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
