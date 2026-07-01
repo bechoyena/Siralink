@@ -181,7 +181,9 @@ bot.action(/^order_item_(.+)$/, (ctx) => {
 // ==========================================
 // 🚀 9. የቦት ማስነሻ በዌብሁክ (WEBHOOK CONFIGURATION FOR RENDER)
 // ==========================================
-const secretPath = `/telegraf/${bot.secretWithToken()}`;
+
+// እዚህ ጋር በራሳችን ሚስጥራዊ ቃል ተክተነዋል
+const secretPath = `/telegraf/siralinkSecretPath7584`;
 app.use(bot.webhookCallback(secretPath));
 
 const RENDER_URL = 'https://siralink-pro.onrender.com';
