@@ -188,13 +188,9 @@ bot.action(/^order_item_(.+)$/, (ctx) => {
   ctx.reply('🛍 እቃውን ለማዘዝ ስምዎትን እና ያሉበትን ትክክለኛ አድራሻ ይጻፉልን። የሱቁ ባለቤት በውስጥ መስመር ያገኝዎታል።');
 });
 
-// ቦቱን ማስነሳት
-bot.launch({
-  polling: {
-    dropPendingUpdates: true
-  }
-}).then(() => {
-  console.log('ሁለገብ ማርኬት ቦት 100% ከዳታቤዝ ነጻ ሆኖ ተነስቷል! 🚀');
+// የድሮውን አጥፍተህ በዚህ ተካው፦
+bot.launch().then(() => {
+  console.log('ሁለገብ ማርኬት ቦት በተሳካ ሁኔታ ተነስቷል! 🚀');
 }).catch((err) => {
   console.error('ቦቱን በማስነሳት ላይ ስህተት፦', err);
 });
