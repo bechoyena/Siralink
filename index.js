@@ -1,6 +1,6 @@
+const express = require('express');
 const { Telegraf, Markup } = require('telegraf');
 const { Pool } = require('pg');
-const express = require('express');
 
 // ቦት እና ዳታቤዝ ኮኔክሽን መክፈቻ
 const bot = new Telegraf('8577893575:AAE0YpDFrK8GgYBP46uqTRsdM6zGkpec1kU');
@@ -11,7 +11,7 @@ const pool = new Pool({
 
 // Render እንዳይዘጋ መከላከያ ዌብ ሰርቨር
 const app = express();
-const PORT = process.env.PORT || 10000; // Render 10000 ፖርትን በብዛት ይጠቀማል
+const PORT = process.env.PORT || 10000;
 
 app.get('/', (req, res) => res.send('ሁለገብ ማርኬት ቦት በንቃት እየሰራ ነው!'));
 
@@ -22,15 +22,17 @@ app.listen(PORT, '0.0.0.0', () => {
 // ==========================================
 // 🚀 1. ዋናው ማውጫ (MAIN MENU)
 // ==========================================
+// ናርዶስ፣ እዚህ ጋር "ስለ እኛ" በተንን ጨምሬዋለሁ
 const mainKeyboard = Markup.inlineKeyboard([
   [Markup.button.callback('🛍 አዳዲስ ዕቃዎችን ይግዙ (ከሱቆች)', 'shop_main')],
   [Markup.button.callback('🏠 የሚከራይ ቤትና ዶርም ፈልግ', 'house_main')],
-  [Markup.button.callback('🔄 ያገለገሉ ዕቃዎችን ይግዙ/ይሽጡ', 'used_main')]
+  [Markup.button.callback('🔄 ያገለገሉ ዕቃዎችን ይግዙ/ይሽጡ', 'used_main')],
+  [Markup.button.callback('ℹ️ ስለ እኛ', 'about_us_main')] // አዲሱ በተን
 ]);
 
 bot.start((ctx) => {
   return ctx.reply(
-    `እንኳን ወደ ከተማችን ሁለገብ የገበያ እና መረጃ ቦት በሰላም መጡ! 👋\n\nምን ማድረግ ይፈልጋሉ? ከታች ካሉት አማራጮች አንዱን ይምረጡ፦`,
+    `እንኳን ወደ Siralink ሁለገብ የገበያ እና መረጃ ቦት በሰላም መጡ! 👋\n\nምን ማድረግ ይፈልጋሉ? ከታች ካሉት አማራጮች አንዱን ይምረጡ፦`,
     mainKeyboard
   );
 });
@@ -58,6 +60,7 @@ bot.action('shop_main', (ctx) => {
 });
 
 // ከዳታቤዝ ላይ ዕቃዎችን ስቦ ማሳያ
+// 💡 አዳዲስ የምርት ምድቦችን በኮድህ ለመጨመር ከፈለግክ እዚህ በታች ባለው 'clothes', 'men' ወዘተ አጠገብ አዲስ ስም መጨመር ትችላለህ
 bot.action(/^get_prod_(.+)$/, async (ctx) => {
   const category = ctx.match[1];
   try {
@@ -66,7 +69,6 @@ bot.action(/^get_prod_(.+)$/, async (ctx) => {
       return ctx.reply('በዚህ ምድብ ውስጥ በአሁኑ ሰዓት ምንም ዕቃ የለም።', Markup.inlineKeyboard([backToMain]));
     }
 
-    // ዕቃዎችን በዝርዝር ማሳየት
     for (let item of res.rows) {
       const txt = `🛍 ${item.name}\n💰 ዋጋ: ${item.price} ብር\nℹ️ መግለጫ: ${item.description}`;
       await ctx.reply(txt, Markup.inlineKeyboard([
@@ -149,29 +151,41 @@ bot.action('sell_instruction', (ctx) => {
   return ctx.reply('📤 የራስዎን ያገለገለ እቃ ለመሸጥ በቀጥታ በቦቱ ላይ /sell ብለው ይጻፉ።');
 });
 
-// ተጠቃሚው /sell ሲል መረጃ መመዝገቢያ መመሪያ መስጠት
 bot.command('sell', (ctx) => {
   ctx.reply('እባክዎን እቃዎን ለመመዝገብ መረጃውን በዚህ መልክ ይላኩ፦\n\n*የዕቃው ስም - ዋጋ - ስልክ ቁጥር*\n\nለምሳሌ፦ HP ላፕቶፕ - 25000 - 0911223344');
 });
 
 
 // ==========================================
-// 💳 5. የክፍያ እና የትዕዛዝ ማረጋገጫዎች (LOGIC)
+// ℹ️ 5. አዲሱ "ስለ እኛ" በተን ምላሽ (ABOUT US)
 // ==========================================
+bot.action('about_us_main', (ctx) => {
+  const aboutText = `ℹ️ *ስለ Siralink ሁለገብ ማርኬት*\n\n` +
+                    `🏗 እኛ ከፍተኛ ጥራት ያላቸውን የኮንስትራክሽን ማሽነሪዎች፣ የኢንዱስትሪ እቃዎች፣ አልባሳት እና የቤት ኪራይ መረጃዎችን በተመጣጣኝ ዋጋ ለደንበኞቻችን የምናቀርብ ታማኝ ድርጅት ነን።\n\n` +
+                    `📍 *አድራሻ:* አዲስ አበባ፣ ኢትዮጵያ\n` +
+                    `📞 *ስልክ:* +2519xxxxxxxx\n` +
+                    `🌐 *ቴሌግራም ቻናል:* @SiralinkMarket\n\n` +
+                    `ምርጫችሁ ስላደረጋችሁን እናመሰግናለን! 🙏`;
 
-// የሱቅ እቃ ማዘዣ ሲጫን
+  return ctx.editMessageText(aboutText, {
+    parse_mode: 'Markdown',
+    ...Markup.inlineKeyboard([backToMain])
+  });
+});
+
+
+// ==========================================
+// 💳 6. የክፍያ እና የትዕዛዝ ማረጋገጫዎች (LOGIC)
+// ==========================================
 bot.action(/^order_item_(.+)$/, (ctx) => {
   ctx.reply('🛍 እቃውን ለማዘዝ ስምዎትን እና ያሉበትን ትክክለኛ አድራሻ ይጻፉልን። የሱቁ ባለቤት በውስጥ መስመር ያገኝዎታል።');
 });
 
-// የቤት ስልክ ቁጥር ማያ በተን ሲጫን (ክፍያ መጠየቂያ)
 bot.action(/^unlock_house_(.+)$/, (ctx) => {
   ctx.reply('🔒 የአከራዩን ስልክ ቁጥር ለማየት 10 ብር በCBE ባንክ (1000686191668) ከፍለው የደረሰኙን ፎቶ (Screenshot) @ad_is17 @ad_is1 ይላኩ።');
 });
 
-
 // ቦቱን ማስነሳት
-// 🚀 ማንኛውንም የድሮ መቆለፊያ አጥፍቶ ቦቱን በንጽህና ማስነሻ (Force Polling)
 bot.launch({
   polling: {
     dropPendingUpdates: true
@@ -182,6 +196,5 @@ bot.launch({
   console.error('ቦቱን በማስነሳት ላይ ስህተት፦', err);
 });
 
-// ሰርቨሩ Render ላይ እንዳይዘጋ መከላከያ
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
