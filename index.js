@@ -187,15 +187,6 @@ bot.action('about_us_main', (ctx) => {
 bot.action(/^order_item_(.+)$/, (ctx) => {
   ctx.reply('🛍 እቃውን ለማዘዝ ስምዎትን እና ያሉበትን ትክክለኛ አድራሻ ይጻፉልን። የሱቁ ባለቤት በውስጥ መስመር ያገኝዎታል።');
 });
-
-// ==========================================
-// 🚀 የቦት ማስነሻ በዌብሁክ (WEBHOOK CONFIGURATION FOR RENDER)
-// ==========================================
-
-// Render የሚሰጠንን ዌብሳይት ሊንክ እና የቦቱን ቶከን አገናኝቶ በዌብሁክ ያስነሳዋል
-const secretPath = `/telegraf/${bot.secretWithToken()}`;
-app.use(bot.webhookCallback(secretPath));
-
 // ==========================================
 // 🚀 የቦት ማስነሻ በዌብሁክ (WEBHOOK CONFIGURATION FOR RENDER)
 // ==========================================
@@ -203,7 +194,6 @@ app.use(bot.webhookCallback(secretPath));
 const secretPath = `/telegraf/${bot.secretWithToken()}`;
 app.use(bot.webhookCallback(secretPath));
 
-// ናርዶስ፣ ያንተን እውነተኛ የRender ሊንክ እዚህ ጋር በቀጥታ አስገብቼዋለሁ!
 const RENDER_URL = 'https://siralink-pro.onrender.com';
 
 bot.telegram.setWebhook(`${RENDER_URL}${secretPath}`)
