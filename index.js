@@ -1,23 +1,22 @@
 const express = require('express');
 const { Telegraf, Markup } = require('telegraf');
 
-// ቦት መክፈቻ
+// 1. ቦት መክፈቻ ቶከን
 const bot = new Telegraf('8577893575:AAE0YpDFrK8GgYBP46uqTRsdM6zGkpec1kU');
 
-// Render እንዳይዘጋ መከላከያ ዌብ ሰርቨር
+// 2. ዌብ ሰርቨር መክፈቻ
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-app.get('/', (req, res) => res.send('ሁለገብ ማርኬት ቦት በንቃት እየሰራ ነው!'));
+app.get('/', (req, res) => res.send('Siralink ሁለገብ ማርኬት ቦት በንቃት እየሰራ ነው!'));
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Web Server is running on port ${PORT}`);
 });
 
 // ==========================================
-// 🛍 2. የእቃዎች መጋዘን (PRODUCTS DATA)
-// ናርዶስ፣ አዲስ እቃ ለመጨመር እዚህ በታች ባሉት ቅንፎች { } ውስጥ ጨምር
-// የምድብ (category) ስሞች መሆን ያለባቸው፦ 'clothes', 'men', 'shoes', ወይም 'elec' ነው
+// 🛍 3. የእቃዎች መጋዘን (PRODUCTS DATA)
+// አዳዲስ እቃዎችን ለመጨመር እዚህ በታች ባሉት ቅንፎች { } ውስጥ መጨመር ትችላለህ
 // ==========================================
 const products = [
   {
@@ -26,7 +25,7 @@ const products = [
     price: 3500,
     description: 'በእጅ ጥልፍ የተሰራ፣ ጥራት ካለው ማግ የተዘጋጀ።',
     category: 'clothes',
-    image_url: 'https://postimages.org/ የምታገኘውን የፎቶ ሊንክ እዚህ ታስገባለህ.jpg'
+    image_url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c'
   },
   {
     id: 2,
@@ -34,7 +33,7 @@ const products = [
     price: 6000,
     description: 'ለሰርግ እና ለተለያዩ ፕሮግራሞች የሚሆን ሙሉ ሱፍ።',
     category: 'men',
-    image_url: 'https://example.com/suit.jpg'
+    image_url: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35'
   },
   {
     id: 3,
@@ -42,12 +41,12 @@ const products = [
     price: 2500,
     description: 'ቻርጅ ለረጅም ጊዜ የሚይዝ፣ የልብ ትርታ የሚለካ።',
     category: 'elec',
-    image_url: 'https://example.com/watch.jpg'
+    image_url: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12'
   }
 ];
 
 // ==========================================
-// 🚀 1. ዋናው ማውጫ (MAIN MENU)
+// 🚀 4. ዋናው ማውጫ (MAIN MENU)
 // ==========================================
 const mainKeyboard = Markup.inlineKeyboard([
   [Markup.button.callback('🛍 አዳዲስ ዕቃዎችን ይግዙ (ከሱቆች)', 'shop_main')],
@@ -71,7 +70,7 @@ bot.action('back_to_main', (ctx) => {
 
 
 // ==========================================
-// 🛍 2. የሱቆች ክፍል (E-COMMERCE RESPONSE)
+// 🛍 5. የሱቆች ክፍል (E-COMMERCE)
 // ==========================================
 bot.action('shop_main', (ctx) => {
   return ctx.editMessageText(
@@ -84,22 +83,17 @@ bot.action('shop_main', (ctx) => {
   );
 });
 
-// ከተቀመጠው ዝርዝር ላይ ዕቃዎችን ፈልጎ በፎቶ ማሳያ
 bot.action(/^get_prod_(.+)$/, async (ctx) => {
   const category = ctx.match[1];
-  
-  // ከተቀመጠው ዝርዝር ውስጥ ከተመረጠው ምድብ ጋር እኩል የሆኑትን መምረጥ
   const filteredProducts = products.filter(p => p.category === category);
 
   if (filteredProducts.length === 0) {
     return ctx.reply('በዚህ ምድብ ውስጥ በአሁኑ ሰዓት ምንም ዕቃ አልተመዘገበም።', Markup.inlineKeyboard([backToMain]));
   }
 
-  // እቃዎቹን በፎቶ እና በዝርዝር መላክ
   for (let item of filteredProducts) {
     const txt = `🛍 *${item.name}*\n💰 ዋጋ: ${item.price} ብር\nℹ️ መግለጫ: ${item.description}`;
     
-    // የፎቶ ሊንክ ካለው በፎቶ፣ ከሌለው በፅሁፍ ብቻ ይልካል
     if (item.image_url && item.image_url.startsWith('http')) {
       await ctx.replyWithPhoto(item.image_url, {
         caption: txt,
@@ -116,7 +110,7 @@ bot.action(/^get_prod_(.+)$/, async (ctx) => {
 
 
 // ==========================================
-// 🏠 3. የቤት ኪራይ ክፍል (REAL ESTATE)
+// 🏠 6. የቤት ኪራይ ክፍል (REAL ESTATE)
 // ==========================================
 bot.action('house_main', (ctx) => {
   return ctx.editMessageText(
@@ -130,14 +124,13 @@ bot.action('house_main', (ctx) => {
   );
 });
 
-// ለጊዜው ቤቶች በኮድ ስለሌሉ የሚሰጠው ምላሽ
 bot.action(/^get_house_(.+)$/, (ctx) => {
   return ctx.reply('በአሁኑ ሰዓት በዚህ ምድብ የተመዘገበ ተከራይ ቤት የለም። አከራዮች መረጃ እንዲያስገቡ እየተደረገ ነው።', Markup.inlineKeyboard([backToMain]));
 });
 
 
 // ==========================================
-// 🔄 4. ያገለገሉ ዕቃዎች ክፍል (CLASSIFIEDS)
+// 🔄 7. ያገለገሉ ዕቃዎች ክፍል (CLASSIFIEDS)
 // ==========================================
 bot.action('used_main', (ctx) => {
   return ctx.editMessageText(
@@ -159,12 +152,12 @@ bot.action('sell_instruction', (ctx) => {
 });
 
 bot.command('sell', (ctx) => {
-  ctx.reply('እባክዎን እቃዎን ለመመዝገብ መረጃውን በዚህ መልክ ይላኩ፦\n\n*የዕቃው ስም - ዋጋ - ስልክ ቁጥር*\n\nለምчнее፦ HP ላፕቶፕ - 25000 - 0911223344');
+  ctx.reply('እባክዎን እቃዎን ለመመዝገብ መረጃውን በዚህ መልክ ይላኩ፦\n\n*የዕቃው ስም - ዋጋ - ስልክ ቁጥር*\n\nለምሳሌ፦ HP ላፕቶፕ - 25000 - 0911223344');
 });
 
 
 // ==========================================
-// ℹ️ 5. "ስለ እኛ" በተን ምላሽ (ABOUT US)
+// ℹ️ 8. "ስለ እኛ" በተን ምላሽ (ABOUT US)
 // ==========================================
 bot.action('about_us_main', (ctx) => {
   const aboutText = `ℹ️ *ስለ Siralink ሁለገብ ማርኬት*\n\n` +
@@ -180,17 +173,14 @@ bot.action('about_us_main', (ctx) => {
   });
 });
 
-
-// ==========================================
-// 💳 6. የክፍያ እና የትዕዛዝ ማረጋገጫዎች (LOGIC)
-// ==========================================
 bot.action(/^order_item_(.+)$/, (ctx) => {
   ctx.reply('🛍 እቃውን ለማዘዝ ስምዎትን እና ያሉበትን ትክክለኛ አድራሻ ይጻፉልን። የሱቁ ባለቤት በውስጥ መስመር ያገኝዎታል።');
 });
-// ==========================================
-// 🚀 የቦት ማስነሻ በዌብሁክ (WEBHOOK CONFIGURATION FOR RENDER)
-// ==========================================
 
+
+// ==========================================
+// 🚀 9. የቦት ማስነሻ በዌብሁክ (WEBHOOK CONFIGURATION FOR RENDER)
+// ==========================================
 const secretPath = `/telegraf/${bot.secretWithToken()}`;
 app.use(bot.webhookCallback(secretPath));
 
@@ -198,10 +188,10 @@ const RENDER_URL = 'https://siralink-pro.onrender.com';
 
 bot.telegram.setWebhook(`${RENDER_URL}${secretPath}`)
   .then(() => {
-    console.log(`ዌብሁክ በተሳካ ሁኔታ ተገናኝቷል! 🌐 ሊንክ፦ ${RENDER_URL}`);
+    console.log(`ዌብሁክ በተሳካ ሁኔታ ተገናኝቷል! 🌐`);
   })
   .catch((err) => {
-    console.error('ዌብሁክን በማገናኘት ላይ ስህተት አጋጥሟል፦', err);
+    console.error('ዌብሁክን በማገናኘት ላይ ስህተት፦', err);
   });
 
 process.once('SIGINT', () => bot.stop('SIGINT'));
