@@ -46,8 +46,14 @@ const usedKeyboard = Markup.keyboard([
 // ==========================================
 // 🎯 4. የትዕዛዝ እና አዝራሮች ሎጂክ (BOT LOGIC)
 // ==========================================
-bot.start((ctx) => {
+bot.start(async (ctx) => {
   if(userSessions[ctx.from.id]) delete userSessions[ctx.from.id];
+  
+  // 🔥 [አዲስ መዋቅር] ተጠቃሚውን ለብሮድካስት እንዲያመች በዳታቤዝ መመዝገብ
+  try {
+    await supabase.from('bot_users').insert([{ chat_id: ctx.from.id }], { upsert: true });
+  } catch (err) { console.error('User registration error:', err); }
+
   return ctx.reply('እንኳን ወደ Siralink መተግበሪያ ማውጫ በሰላም መጡ! 👋\n\nከታች ካለው አፕ መሰል ማውጫ የሚፈልጉትን አገልግሎት ይምረጡ፦', mainKeyboard);
 });
 
@@ -150,6 +156,42 @@ bot.hears('ℹ️ ስለ እኛ', (ctx) => {
   return ctx.reply(aboutText, { parse_mode: 'Markdown', ...aboutInlineKeyboard });
 });
 
+// 🔥 [አዲስ ባህሪ] አስተዳዳሪው አዲስ እቃ ሲጨምር ለሁሉም እንዲያስተላልፍ መፍቀጃ (ኮማንድ)
+bot.command('broadcast', async (ctx) => {
+  if (ctx.from.id !== ADMIN_CHAT_ID) return; // ላንተ ብቻ እንዲሰራ
+  
+  const categoryInput = ctx.message.text.replace('/broadcast', '').trim();
+  if (!categoryInput) {
+    return ctx.reply('⚠️ እባክህ የምድቡን ስም አብረህ ጻፍ። ለምሳሌ፦ /broadcast 👗 የሴቶች ልብስ');
+  }
+
+  try {
+    // 1. ሁሉንም ተጠቃሚዎች ከዳታቤዝ ማውጣት
+    const { data: users, error } = await supabase.from('bot_users').select('chat_id');
+    if (error || !users || users.length === 0) {
+      return ctx.reply('📢 መልዕክት የሚላክላቸው ተጠቃሚዎች በዳታቤዙ ላይ አልተገኙም።');
+    }
+
+    const notificationText = `🔔 *አዲስ ምርት ወጥቷል!* 🔔\n\nSiralink Market ላይ በ *${categoryInput}* ምድብ ስር አዳዲስ ምርቶች አሁን ገብተዋል። ቦቱ ላይ በመግባት አሁኑኑ ይመልከቱ! 🛍✨`;
+    
+    let successCount = 0;
+    ctx.reply(`⏳ ለ ${users.length} ተጠቃሚዎች መልዕክት መላክ ተጀምሯል...`);
+
+    // 2. ለእያንዳንዱ ሰው አንድ በአንድ መላክ
+    for (let u of users) {
+      try {
+        await bot.telegram.sendMessage(u.chat_id, notificationText, { parse_mode: 'Markdown' });
+        successCount++;
+      } catch (e) {
+        // ቦቱን ብሎክ ያደረጉ ሰዎችን ችላ ለማለት
+      }
+    }
+    ctx.reply(`✅ 📢 መልዕክቱ በስኬት ተላልፏል! ለ ${successCount} ሰዎች ደርሷል።`);
+  } catch (err) {
+    ctx.reply('❌ መልዕክቱን ማስተላለፍ ላይ ስህተት አጋጥሟል።');
+  }
+});
+
 // ==========================================
 // 🛎 5. የጽሑፍ መልዕክቶች መከታተያ ፎርም (TEXT HANDLING)
 // ==========================================
@@ -234,7 +276,6 @@ bot.action('about_services', async (ctx) => {
   return ctx.reply(serviceExplanation, { parse_mode: 'Markdown', ...mainKeyboard });
 });
 
-// 🔥 [የተስተካከለው የደንበኞች ማዕከል ክፍል - በአንደኛው መፍትሔ መሠረት የተጻፈ]
 bot.action('about_customer_center', async (ctx) => {
   await ctx.answerCbQuery();
   const customerCenterText = `🏢 *የደንበኞች ማዕከል መረጃ*\n\n📍 *አድራሻ፦* ሀዋሳ፤ ኢትዮጵያ\n\n📞 *ስልክ፦*\n• 0946662487\n• 0701404704\n\n📱 *የቴሌግራም አድራሻዎች፦*\n🌐 @SiralinkMarket\n👤 @ad\\_is17\n👤 @ad\\_is1`;
@@ -253,7 +294,7 @@ bot.action(/^order_item_(.+)$/, async (ctx) => {
   } catch (err) { console.error(err); }
 });
 
-bot.action(/^rent_house_(.+)$/, (ctx) => ctx.reply('📞 ቤቱን ለመከራየት አድራሻዎን and ስልክዎን እዚህ ይተዉልን። ባለቤቱ በውስጥ መስመር ያገኝዎታል።'));
+bot.action(/^rent_house_(.+)$/, (ctx) => ctx.reply('📞 ቤቱን ለመከራየት አድራሻዎን እና ስልክዎን እዚህ ይተዉልን። ባለቤቱ በውስጥ መስመር ያገኝዎታል።'));
 bot.action(/^call_owner_(.+)$/, (ctx) => ctx.reply('📱 እቃው ላይ በተጠቀሰው ስልክ ቁጥር በመደወል በቀጥታ ከባለቤቱ ጋር መነጋገር ይችላሉ።'));
 
 // 🚀 7. ማስነሻ
