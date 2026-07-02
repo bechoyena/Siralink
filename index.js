@@ -1,49 +1,210 @@
 const express = require('express');
 const { Telegraf, Markup } = require('telegraf');
 
-// ቦት መክፈቻ ቶከን
+// 1. ቦት መክፈቻ ቶከን
 const bot = new Telegraf('8577893575:AAE0YpDFrK8GgYBP46uqTRsdM6zGkpec1kU');
 
-// ዌብ ሰርቨር
+// 2. ዌብ ሰርቨር (Render እንዳይዘጋ)
 const app = express();
 const PORT = process.env.PORT || 10000;
-app.get('/', (req, res) => res.send('Siralink ቦት በንቃት እየሰራ ነው!'));
+app.get('/', (req, res) => res.send('Siralink ሁለገብ ማርኬት ቦት በንቃት እየሰራ ነው!'));
 app.listen(PORT, '0.0.0.0', () => console.log(`Web Server running on port ${PORT}`));
 
-// ምርቶች (ከተፈለገ በኋላ ላይ እቃ መጨመር ይቻላል)
+// ==========================================
+// 🛍 3. የተሟላ የእቃዎች መጋዘን (PRODUCTS DATA)
+// ==========================================
 const products = [
-  { id: 1, name: 'ያማረ የሴቶች የሐበሻ ቀሚስ', price: 3500, description: 'በእጅ ጥልፍ የተሰራ።', category: 'clothes', image_url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c' }
+  {
+    id: 1,
+    name: 'ያማረ የሴቶች የሐበሻ ቀሚስ',
+    price: 3500,
+    description: 'በእጅ ጥልፍ የተሰራ፣ ጥራት ካለው ማግ የተዘጋጀ።',
+    category: 'clothes',
+    image_url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c'
+  },
+  {
+    id: 2,
+    name: 'የወንዶች ዘመናዊ ሱፍ',
+    price: 6000,
+    description: 'ለሰርግ እና ለተለያዩ ፕሮግራሞች የሚሆን ሙሉ ሱፍ።',
+    category: 'men',
+    image_url: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35'
+  },
+  {
+    id: 3,
+    name: 'የወንዶች ስፖርት ጫማ (Sneakers)',
+    price: 2800,
+    description: 'ለረጅም መንገድ እና ለስፖርት የሚሆን ምቹ ጫማ።',
+    category: 'shoes',
+    image_url: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff'
+  },
+  {
+    id: 4,
+    name: 'ስማርት ሰዓት (Smart Watch Series 9)',
+    price: 2500,
+    description: 'ቻርጅ ለረጅም ጊዜ የሚይዝ፣ የልብ ትርታ የሚለካ።',
+    category: 'elec',
+    image_url: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12'
+  }
 ];
 
+// ==========================================
+// 🚀 4. ዋናው ማውጫ (MAIN MENU KEYBOARD)
+// ==========================================
 const mainKeyboard = Markup.inlineKeyboard([
   [Markup.button.callback('🛍 አዳዲስ ዕቃዎችን ይግዙ (ከሱቆች)', 'shop_main')],
   [Markup.button.callback('🏠 የሚከራይ ቤትና ዶርም ፈልግ', 'house_main')],
+  [Markup.button.callback('🔄 ያገለገሉ ዕቃዎችን ይግዙ/ይሽጡ', 'used_main')],
   [Markup.button.callback('ℹ️ ስለ እኛ', 'about_us_main')]
 ]);
 
-bot.start((ctx) => ctx.reply(`እንኳን ወደ Siralink ማርኬት ቦት በሰላም መጡ! 👋`, mainKeyboard));
+// የኋሊት መመለሻ በተን
 const backToMain = [Markup.button.callback('🔙 ወደ ዋናው ማውጫ', 'back_to_main')];
-bot.action('back_to_main', (ctx) => ctx.editMessageText(`ምን ማድረግ ይፈልጋሉ?`, mainKeyboard));
 
-bot.action('shop_main', (ctx) => {
-  return ctx.editMessageText(`🛍 የሱቆች መጋዘን\n\nየዕቃ ምድብ ይምረጡ፦`,
-    Markup.inlineKeyboard([[Markup.button.callback('👗 የሴቶች ልብስ', 'get_prod_clothes')], backToMain])
+// /start ሲባል የሚመጣው
+bot.start((ctx) => {
+  return ctx.reply(
+    `እንኳን ወደ Siralink ሁለገብ የገበያ እና መረጃ ቦት በሰላም መጡ! 👋\n\nምን ማድረግ ይፈልጋሉ? ከታች ካሉት አማራጮች አንዱን ይምረጡ፦`,
+    mainKeyboard
   );
 });
 
-bot.action('get_prod_clothes', async (ctx) => {
-  const item = products[0];
-  const txt = `🛍 *${item.name}*\n💰 ዋጋ: ${item.price} ብር\nℹ️ መግለጫ: ${item.description}`;
-  return ctx.replyWithPhoto(item.image_url, { caption: txt, parse_mode: 'Markdown' });
+// ወደ ዋናው ማውጫ መመለሻ ሎጂክ (ይህ ነው ቅድም ያስቸገረህ)
+bot.action('back_to_main', async (ctx) => {
+  try {
+    await ctx.editMessageText(`ምን ማድረግ ይፈልጋሉ? ከታች ካሉት አማራጮች አንዱን ይምረጡ፦`, mainKeyboard);
+  } catch (err) {
+    // መልእክቱ ተመሳሳይ ከሆነ ስህተት እንዳይፈጥር
+    await ctx.reply(`ምን ማድረግ ይፈልጋሉ? ከታች ካሉት አማራጮች አንዱን ይምረጡ፦`, mainKeyboard);
+  }
 });
 
-bot.action('house_main', (ctx) => ctx.reply('በአሁኑ ሰዓት የተመዘገበ ቤት የለም።', Markup.inlineKeyboard([backToMain])));
-bot.action('about_us_main', (ctx) => ctx.reply('Siralink ማርኬት በአዲስ አበባ የሚገኝ ታማኝ ድርጅት ነው።', Markup.inlineKeyboard([backToMain])));
 
-// አስተማማኝ ማስነሻ (Long Polling)
-bot.launch({ polling: { dropPendingUpdates: true } })
-  .then(() => console.log('Siralink Bot is running... 🚀'))
-  .catch((err) => console.error(err));
+// ==========================================
+// 🛍 5. የሱቆች ክፍል (E-COMMERCE RESPONSE)
+// ==========================================
+bot.action('shop_main', (ctx) => {
+  return ctx.editMessageText(
+    `🛍 የሱቆች መጋዘን\n\nለመግዛት የሚፈልጉትን የዕቃ ምድብ ይምረጡ፦`,
+    Markup.inlineKeyboard([
+      [Markup.button.callback('👗 የሴቶች ልብስ', 'get_prod_clothes'), Markup.button.callback('👔 የወንዶች ልብስ', 'get_prod_men')],
+      [Markup.button.callback('👟 ጫማዎች', 'get_prod_shoes'), Markup.button.callback('📱 ኤሌክትሮኒክስ', 'get_prod_elec')],
+      backToMain
+    ])
+  );
+});
+
+// ሁሉንም ምርቶች ፈልጎ በፎቶ ማሳያ
+bot.action(/^get_prod_(.+)$/, async (ctx) => {
+  const category = ctx.match[1];
+  const filteredProducts = products.filter(p => p.category === category);
+
+  if (filteredProducts.length === 0) {
+    return ctx.reply('በዚህ ምድብ ውስጥ በአሁኑ ሰዓት ምንም ዕቃ አልተመዘገበም።', Markup.inlineKeyboard([backToMain]));
+  }
+
+  for (let item of filteredProducts) {
+    const txt = `🛍 *${item.name}*\n💰 ዋጋ: ${item.price} ብር\nℹ️ መግለጫ: ${item.description}`;
+    
+    if (item.image_url && item.image_url.startsWith('http')) {
+      await ctx.replyWithPhoto(item.image_url, {
+        caption: txt,
+        parse_mode: 'Markdown',
+        ...Markup.inlineKeyboard([[Markup.button.callback(`🛒 አሁን እዘዝ (Order)`, `order_item_${item.id}`)]])
+      });
+    } else {
+      await ctx.reply(txt, Markup.inlineKeyboard([
+        [Markup.button.callback(`🛒 አሁን እዘዝ (Order)`, `order_item_${item.id}`)]
+      ]));
+    }
+  }
+  
+  // እቃዎቹን አይቶ ሲጨርስ ወደ ዋናው ማውጫ መመለሻ በተን ከስር መላክ
+  await ctx.reply('ሌላ እቃ ማየት ይፈልጋሉ?', Markup.inlineKeyboard([backToMain]));
+});
+
+
+// ==========================================
+// 🏠 6. የቤት ኪራይ ክፍል (REAL ESTATE)
+// ==========================================
+bot.action('house_main', (ctx) => {
+  return ctx.editMessageText(
+    `🏠 የቤት እና የዶርም ኪራይ ማዕከል\n\nየሚፈልጉትን የቤት አይነት ይምረጡ፦`,
+    Markup.inlineKeyboard([
+      [Markup.button.callback('🛏 የተማሪዎች ዶርም', 'get_house_dorm')],
+      [Markup.button.callback('🏢 ስቱዲዮ አፓርትመንት', 'get_house_studio')],
+      [Markup.button.callback('🏡 ቪላ / ሰርቪስ ቤት', 'get_house_villa')],
+      backToMain
+    ])
+  );
+});
+
+bot.action(/^get_house_(.+)$/, (ctx) => {
+  return ctx.reply('በአሁኑ ሰዓት በዚህ ምድብ የተመዘገበ ተከራይ ቤት የለም። አከራዮች መረጃ እንዲያስገቡ እየተደረገ ነው።', Markup.inlineKeyboard([backToMain]));
+});
+
+
+// ==========================================
+// 🔄 7. ያገለገሉ ዕቃዎች ክፍል (CLASSIFIEDS)
+// ==========================================
+bot.action('used_main', (ctx) => {
+  return ctx.editMessageText(
+    `🔄 ያገለገሉ ዕቃዎች ማዕከል\n\nእቃ መግዛት ይፈልጋሉ ወይስ የራስዎን እቃ መሸጥ?`,
+    Markup.inlineKeyboard([
+      [Markup.button.callback('📥 ዕቃዎችን ለመመልከት', 'view_used')],
+      [Markup.button.callback('📤 የራሴን ዕቃ ለመሸጥ (/sell)', 'sell_instruction')],
+      backToMain
+    ])
+  );
+});
+
+bot.action('view_used', (ctx) => {
+  return ctx.reply('ምንም ያገለገሉ እቃዎች አልተመዘገቡም።', Markup.inlineKeyboard([backToMain]));
+});
+
+bot.action('sell_instruction', (ctx) => {
+  return ctx.reply('📤 የራስዎን ያገለገለ እቃ ለመሸጥ በቀጥታ በቦቱ ላይ /sell ብለው ይጻፉ።', Markup.inlineKeyboard([backToMain]));
+});
+
+bot.command('sell', (ctx) => {
+  ctx.reply('እባክዎን እቃዎን ለመመዝገብ መረጃውን በዚህ መልክ ይላኩ፦\n\n*የዕቃው ስም - ዋጋ - ስልክ ቁጥር*\n\nለምሳሌ፦ HP ላፕቶፕ - 25000 - 0911223344');
+});
+
+
+// ==========================================
+// ℹ️ 8. "ስለ እኛ" በተን ምላሽ (ABOUT US)
+// ==========================================
+bot.action('about_us_main', (ctx) => {
+  const aboutText = `ℹ️ *ስለ Siralink ሁለገብ ማርኬት*\n\n` +
+                    `🏗 እኛ ከፍተኛ ጥራት ያላቸውን የኮንስትራክሽን ማሽነሪዎች፣ የኢንዱስትሪ እቃዎች፣ አልባሳት እና የቤት ኪራይ መረጃዎችን በተመጣጣኝ ዋጋ ለደንበኞቻችን የምናቀርብ ታማኝ ድርጅት ነን።\n\n` +
+                    `📍 *አድራሻ:* አዲስ አበባ፣ ኢትዮጵያ\n` +
+                    `📞 *ስልክ:* +2519xxxxxxxx\n` +
+                    `🌐 *ቴሌግራም ቻናል:* @SiralinkMarket\n\n` +
+                    `ምርጫችሁ ስላደረጋችሁን እናመሰግናለን! 🙏`;
+
+  return ctx.editMessageText(aboutText, {
+    parse_mode: 'Markdown',
+    ...Markup.inlineKeyboard([backToMain])
+  });
+});
+
+bot.action(/^order_item_(.+)$/, (ctx) => {
+  ctx.reply('🛍 እቃውን ለማዘዝ ስምዎትን እና ያሉበትን ትክክለኛ አድራሻ ይጻፉልን። የሱቁ ባለቤት በውስጥ መስመር ያገኝዎታል።');
+});
+
+
+// ==========================================
+// 🚀 9. አስተማማኝ ማስነሻ (Clean Long Polling)
+// ==========================================
+bot.launch({
+  polling: {
+    dropPendingUpdates: true
+  }
+}).then(() => {
+  console.log('Siralink Bot 100% ሙሉ ሆኖ በንቃት ተነስቷል! 🚀');
+}).catch((err) => {
+  console.error(err);
+});
 
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
