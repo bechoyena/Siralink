@@ -4,13 +4,13 @@ const { createClient } = require('@supabase/supabase-js');
 
 // 1. ቦት እና ሱፓቤዝ መገናኛ (ያንተ ትክክለኛ መረጃዎች)
 const bot = new Telegraf('8577893575:AAE0YpDFrK8GgYBP46uqTRsdM6zGkpec1kU');
-const ADMIN_CHAT_ID = 5406168929; // ያንተ የቴሌግራም ID እዚህ ገብቷል
+const ADMIN_CHAT_ID = 5406168929; // ያንተ የቴሌግራም ID
 
 const SUPABASE_URL = 'https://gyooossgagycyeyffjfr.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5b29vc3NnYWd5Y3lleWZmamZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5Mzk5ODgsImV4cCI6MjA5ODUxNTk4OH0.k85DGyIEU_wEzZhE6Qbo-ssiXbhT2gR69SH7KVOZ4NY';
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// የትዕዛዝ መረጃዎችን ጊዜያዊ ማቀፊያ (In-memory session)
+// የትዕዛዝ እና የዕቃ መሸጫ መረጃዎችን ጊዜያዊ ማቀፊያ (Sessions)
 const userSessions = {};
 
 // 2. ዌብ ሰርቨር (Render እንዳይዘጋ)
@@ -132,58 +132,21 @@ bot.hears('📥 ዕቃዎች ለመመልከት', async (ctx) => {
   } catch (err) { await ctx.reply('መረጃውን ማግኘት አልተቻለም።', usedKeyboard); }
 });
 
+// 🔥 የራሴን ዕቃ ለመሸጥ ሲጫን በደረጃ መረጃ የመጠየቂያ ሎጂክ ማስጀመሪያ
 bot.hears('📤 የራሴን ዕቃ ለመሸጥ', (ctx) => {
-  return ctx.reply('📤 የራስዎን ያገለገለ እቃ ለመመዝገብ በቀጥታ በቦቱ ላይ /sell ብለው ይጻፉ። ለምሳሌ፦\n\n/sell HP ላፕቶፕ - 25000 - 0911223344', usedKeyboard);
-});
-
-// 🔄 የ /sell ማዘዣ ጥያቄዎችን ተቀብሎ ላንተ የሚልክ እና ሱፓቤዝ ላይ የሚጨምር
-bot.command('sell', async (ctx) => {
-  const messageText = ctx.message.text.replace('/sell', '').trim();
-  const username = ctx.message.from.username ? `@${ctx.message.from.username}` : 'የለውም';
-  if (!messageText) {
-    return ctx.reply('❌ እባክዎ መረጃውን በስርዓቱ ያስገቡ።\nለምሳሌ፦ `/sell HP ላፕቶፕ - 25000 - 0911223344`', { parse_mode: 'Markdown' });
-  }
-  const parts = messageText.split('-');
-  const name = parts[0] ? parts[0].trim() : 'ያልተጠቀሰ ዕቃ';
-  const price = parts[1] ? parts[1].trim() : '0';
-  const contact = parts[2] ? parts[2].trim() : 'ያልተጠቀሰ';
-
-  try {
-    await supabase.from('used_items').insert([{ name: name, price: price, contact: contact, description: `በተጠቃሚ ${username} የተላከ` }]);
-    const adminAlert = `🚨 *አዲስ ያገለገለ ዕቃ ሽያጭ ጥያቄ መጥቷል!*\n\n👤 *ላኪ:* ${ctx.message.from.first_name} (${username})\n📦 *ዕቃ:* ${name}\n💰 *ዋጋ:* ${price} ብር\n📞 *ስልክ:* ${contact}`;
-    await bot.telegram.sendMessage(ADMIN_CHAT_ID, adminAlert, { parse_mode: 'Markdown' });
-    ctx.reply('📥 የእቃዎ መረጃ ደርሶናል። መረጃው ቀጥታ በቦቱ ላይ ተለጥፏል! እናመሰግናለን።', mainKeyboard);
-  } catch (err) { ctx.reply('ይቅርታ፣ መረጃውን መመዝገብ አልተቻለም።'); }
-});
-
-// --- ℹ️ 4.4 ስለ እኛ ክፍል ---
-bot.hears('ℹ️ ስለ እኛ', (ctx) => {
-  const aboutText = `ℹ️ *ስለ Siralink ሁለገብ ማርኬት*\n\n🏗 እኛ ከፍተኛ ጥራት ያላቸውን ማሽነሪዎች፣ አልባсах እና የቤት ኪራይ መረጃዎችን የምናቀርብ ታማኝ ድርጅት ነን።\n\n📍 *አድራሻ:* አዲስ አበባ፣ ኢትዮጵያ\n🌐 *ቻናል:* @SiralinkMarket`;
-  return ctx.reply(aboutText, { parse_mode: 'Markdown', ...mainKeyboard });
+  userSessions[ctx.from.id] = { step: 'ASK_SELL_NAME' };
+  return ctx.reply('📝 እሺ፣ ለመሸጥ የሚፈልጉትን ያገለገለ *ዕቃ ስም* (ለምሳሌ፡ HP ላፕቶፕ) ይጻፉልኝ፦');
 });
 
 // ==========================================
-// 🛎 5. የውስጥ በተን ማዘዣዎች (Inline Actions)
+// 🛎 5. የጽሑፍ መልዕክቶች መከታተያ ፎርም (TEXT HANDLING)
 // ==========================================
-
-// 🛒 እቃዎች ሲታዘዙ በየተራ ስም፣ ስልክና አድራሻ መጠየቂያ ሎጂክ
-bot.action(/^order_item_(.+)$/, async (ctx) => {
-  const productId = ctx.match[1];
-  try {
-    const { data, error } = await supabase.from('products').select('*').eq('id', productId).single();
-    if (error || !data) return ctx.reply('❌ ይቅርታ፣ የዕቃው መረጃ አልተገኘም!');
-    userSessions[ctx.from.id] = { step: 'ASK_NAME', product: data };
-    await ctx.answerCbQuery();
-    await ctx.reply('📝 እሺ ትዕዛዝ ለመጀመር በመጀመሪያ *ትክክለኛ ስምዎን* ይጻፉልኝ፦', { parse_mode: 'Markdown' });
-  } catch (err) { console.error(err); }
-});
-
-// ተከታታይ የጽሑፍ መልዕክቶችን (ስም፣ ስልክ) መከታተያ ፎርም
 bot.on('text', async (ctx, next) => {
   const session = userSessions[ctx.from.id];
   if (!session) return next();
   const text = ctx.message.text;
 
+  // 🛍 --- 5.1 የአዳዲስ ዕቃዎች ትዕዛዝ መቀበያ መስመር ---
   if (session.step === 'ASK_NAME') {
     session.name = text;
     session.step = 'ASK_PHONE';
@@ -201,11 +164,9 @@ bot.on('text', async (ctx, next) => {
     const alertMessage = `🛍 *አዲስ የዕቃ ትዕዛዝ ደርሷል!* 🛍\n\n📦 *ዕቃ:* ${prod.name}\n💰 *ዋጋ:* ${prod.price} ብር\n\n👤 *የደንበኛ ስም:* ${session.name}\n📞 *ስልክ ቁጥር:* ${session.phone}\n📍 *አድራሻ:* ${session.address}\n📱 *ቴሌግራም:* ${customerUser}`;
 
     try {
-      // 1. ቀጥታ ለባለሱቁ መላክ (shop_owner_id በ products ሰንጠረዥ ላይ ከተሞላ)
       if (prod.shop_owner_id) {
         await bot.telegram.sendMessage(prod.shop_owner_id, alertMessage, { parse_mode: 'Markdown' });
       }
-      // 2. ላንተ (ለዋናው አድሚን) ሁልጊዜ ኮፒ እንዲደርስህ ማድረግ
       if (Number(prod.shop_owner_id) !== ADMIN_CHAT_ID) {
         await bot.telegram.sendMessage(ADMIN_CHAT_ID, `[የትዕዛዝ ኮፒ ላንተ]\n${alertMessage}`, { parse_mode: 'Markdown' });
       }
@@ -215,13 +176,62 @@ bot.on('text', async (ctx, next) => {
       await ctx.reply('❌ ትዕዛዙን ማስተላለፍ ላይ ችግር አጋጥሟል።');
       delete userSessions[ctx.from.id];
     }
+    return;
   }
+
+  // 🔄 --- 5.2 ያገለገሉ ዕቃዎች መሸጫ መስመር (ይህ ነው ለአንተ ቀጥታ የሚልከው!) ---
+  if (session.step === 'ASK_SELL_NAME') {
+    session.sellName = text;
+    session.step = 'ASK_SELL_PRICE';
+    return ctx.reply('💰 የዕቃውን *መሸጫ ዋጋ* በብር ብቻ ይጻፉልኝ፦');
+  }
+  if (session.step === 'ASK_SELL_PRICE') {
+    session.sellPrice = text;
+    session.step = 'ASK_SELL_PHONE';
+    return ctx.reply('📞 ገዢዎች እንዲያገኙዎት *የስልክ ቁጥርዎን* ያስገቡ፦');
+  }
+  if (session.step === 'ASK_SELL_PHONE') {
+    session.sellPhone = text;
+    const username = ctx.message.from.username ? `@${ctx.message.from.username}` : 'የለውም';
+
+    try {
+      // 1. መረጃውን ሱፓቤዝ 'used_items' table ላይ መመዝገብ
+      await supabase.from('used_items').insert([
+        { name: session.sellName, price: session.sellPrice, contact: session.sellPhone, category: '📥 ዕቃዎች ለመመልከት', description: `በተጠቃሚ ${username} የተላከ` }
+      ]);
+
+      // 2. 🚨 ቀጥታ ላንተ (ADMIN) ማሳወቂያ መላክ
+      const adminAlert = `🚨 *አዲስ ያገለገለ ዕቃ ሽያጭ ጥያቄ መጥቷል!* 🚨\n\n👤 *ላኪ:* ${ctx.message.from.first_name} (${username})\n📦 *ዕቃ:* ${session.sellName}\n💰 *ዋጋ:* ${session.sellPrice} ብር\n📞 *ስልክ:* ${session.sellPhone}`;
+      await bot.telegram.sendMessage(ADMIN_CHAT_ID, adminAlert, { parse_mode: 'Markdown' });
+
+      // 3. ለደንበኛው መልስ መስጠት
+      await ctx.reply('📥 የእቃዎ መረጃ ደርሶናል። መረጃው ቀጥታ በቦቱ ላይ ተለጥፏል! እናመሰግናለን።', mainKeyboard);
+      delete userSessions[ctx.from.id];
+    } catch (err) {
+      await ctx.reply('ይቅርታ፣ መረጃውን መመዝገብ አልተቻለም። እባክዎ ቆይተው ይሞክሩ።');
+      delete userSessions[ctx.from.id];
+    }
+  }
+});
+
+// ==========================================
+// 🛎 6. የውስጥ በተን ማዘዣዎች (Inline Actions)
+// ==========================================
+bot.action(/^order_item_(.+)$/, async (ctx) => {
+  const productId = ctx.match[1];
+  try {
+    const { data, error } = await supabase.from('products').select('*').eq('id', productId).single();
+    if (error || !data) return ctx.reply('❌ ይቅርታ፣ የዕቃው መረጃ አልተገኘም!');
+    userSessions[ctx.from.id] = { step: 'ASK_NAME', product: data };
+    await ctx.answerCbQuery();
+    await ctx.reply('📝 እሺ ትዕዛዝ ለመጀመር በመጀመሪያ *ትክክለኛ ስምዎን* ይጻፉልኝ፦', { parse_mode: 'Markdown' });
+  } catch (err) { console.error(err); }
 });
 
 bot.action(/^rent_house_(.+)$/, (ctx) => ctx.reply('📞 ቤቱን ለመከራየት አድራሻዎን እና ስልክዎን እዚህ ይተዉልን። ባለቤቱ በውስጥ መስመር ያገኝዎታል።'));
 bot.action(/^call_owner_(.+)$/, (ctx) => ctx.reply('📱 እቃው ላይ በተጠቀሰው ስልክ ቁጥር በመደወል በቀጥታ ከባለቤቱ ጋር መነጋገር ይችላሉ።'));
 
-// 🚀 6. ማስነሻ
+// 🚀 7. ማስነሻ
 bot.launch({ polling: { dropPendingUpdates: true } })
   .then(() => console.log('Siralink Bot is Fully Active! 🚀'))
   .catch((err) => console.error(err));
