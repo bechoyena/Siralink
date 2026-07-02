@@ -138,7 +138,7 @@ bot.hears('📤 የራሴን ዕቃ ለመሸጥ', (ctx) => {
   return ctx.reply('📝 እሺ፣ ለመሸጥ የሚፈልጉትን ያገለገለ *ዕቃ ስም* (ለምሳሌ፡ HP ላፕቶፕ) ይጻፉልኝ፦');
 });
 
-// --- ℹ️ 4.4 ስለ እኛ ክፍል (ባንተ ማስተካከያ መሰረት የተገነባ) ---
+// --- ℹ️ 4.4 ስለ እኛ ክፍል ---
 bot.hears('ℹ️ ስለ እኛ', (ctx) => {
   const aboutText = `✨ *እንኳን ወደ Siralink Market ሁለገብ የንግድና ስራ ማዕከል በደህና መጡ!*\n\n❓ ስለ Siralink Market ምን ማወቅ ይፈልጋሉ? ከታች ካሉት በተኖች ይምረጡ፦`;
   
@@ -227,20 +227,21 @@ bot.on('text', async (ctx, next) => {
 // 🛎 6. የውስጥ በተን ማዘዣዎች (Inline Actions)
 // ==========================================
 
-// 🔥 6.1 አዲሶቹ የ"ስለ እኛ" የውስጥ በተኖች ማዘዣ
+// 6.1 የ"ስለ እኛ" የውስጥ በተኖች ማዘዣ
 bot.action('about_services', async (ctx) => {
   await ctx.answerCbQuery();
   const serviceExplanation = `💼 *የ Siralink Market የቦት አገልግሎት ማብራሪያ* 💼\n\nይህ ቦት ደንበኞችን እና ነጋዴዎችን/ባለቤቶችን በቀጥታ የሚያገናኝ ዘመናዊ የገበያ መድረክ ነው።\n\n🛍 *አዳዲስ ዕቃዎች:* የተለያዩ አዳዲስ አልባሳትን፣ ጫማዎችን እና ኤሌክትሮኒክሶችን በቀጥታ ከሱቆች መጋዘን በመምረጥ ማዘዝ ይችላሉ።\n🏠 *የቤትና ዶርም ኪራይ:* ለተማሪዎች ዶርም፣ ስቱዲዮ አፓርትመንት እና ቪላ ቤቶች መረጃ በማግኘት በቀላሉ ይከራያሉ።\n🔄 *ያገለገሉ ዕቃዎች:* የራስዎን ያገለገለ ዕቃ መረጃ በማስገባት መሸጥ ወይም በሌሎች የቀረቡ ዕቃዎችን ከባለቤቱ ጋር በመደወል መግዛት ይችላሉ።`;
   return ctx.reply(serviceExplanation, { parse_mode: 'Markdown', ...mainKeyboard });
 });
 
+// 🔥 [የተስተካከለው የደንበኞች ማዕከል ክፍል - በአንደኛው መፍትሔ መሠረት የተጻፈ]
 bot.action('about_customer_center', async (ctx) => {
   await ctx.answerCbQuery();
-  const customerCenterText = `🏢 *የደንበኞች ማዕከል መረጃ*\n\n📍 *አድራሻ፦* ሀዋሳ፤ ኢትዮጵያ\n\n📞 *ስልክ፦*\n• 0946662487\n• 0701404704\n\n📱 *የቴሌግራም አድራሻዎች፦*\n🌐 @SiralinkMarket\n👤 @ad_is17\n👤 @ad_is1`;
+  const customerCenterText = `🏢 *የደንበኞች ማዕከል መረጃ*\n\n📍 *አድራሻ፦* ሀዋሳ፤ ኢትዮጵያ\n\n📞 *ስልክ፦*\n• 0946662487\n• 0701404704\n\n📱 *የቴሌግራም አድራሻዎች፦*\n🌐 @SiralinkMarket\n👤 @ad\\_is17\n👤 @ad\\_is1`;
   return ctx.reply(customerCenterText, { parse_mode: 'Markdown', ...mainKeyboard });
 });
 
-// 🛒 የድሮው የእቃዎች ማዘዣ ሎጂክ (እንዳለ ሳይነካ የቀጠለ)
+// 🛒 የድሮው የእቃዎች ማዘዣ ሎጂክ
 bot.action(/^order_item_(.+)$/, async (ctx) => {
   const productId = ctx.match[1];
   try {
@@ -252,7 +253,7 @@ bot.action(/^order_item_(.+)$/, async (ctx) => {
   } catch (err) { console.error(err); }
 });
 
-bot.action(/^rent_house_(.+)$/, (ctx) => ctx.reply('📞 ቤቱን ለመከራየት አድራሻዎን እና ስልክዎን እዚህ ይተዉልን። ባለቤቱ በውስጥ መስመር ያገኝዎታል።'));
+bot.action(/^rent_house_(.+)$/, (ctx) => ctx.reply('📞 ቤቱን ለመከራየት አድራሻዎን and ስልክዎን እዚህ ይተዉልን። ባለቤቱ በውስጥ መስመር ያገኝዎታል።'));
 bot.action(/^call_owner_(.+)$/, (ctx) => ctx.reply('📱 እቃው ላይ በተጠቀሰው ስልክ ቁጥር በመደወል በቀጥታ ከባለቤቱ ጋር መነጋገር ይችላሉ።'));
 
 // 🚀 7. ማስነሻ
