@@ -49,7 +49,6 @@ const usedKeyboard = Markup.keyboard([
 bot.start(async (ctx) => {
   if(userSessions[ctx.from.id]) delete userSessions[ctx.from.id];
   
-  // 🔥 [አዲስ መዋቅር] ተጠቃሚውን ለብሮድካስት እንዲያመች በዳታቤዝ መመዝገብ
   try {
     await supabase.from('bot_users').insert([{ chat_id: ctx.from.id }], { upsert: true });
   } catch (err) { console.error('User registration error:', err); }
@@ -69,23 +68,41 @@ bot.hears('🛍 አዳዲስ ዕቃዎችን ይግዙ', (ctx) => {
 
 const shopCategories = ['👗 የሴቶች ልብስ', '👔 የወንዶች ልብስ', '👟 ጫማዎች', '📱 ኤሌክትሮኒክስ'];
 bot.hears(shopCategories, async (ctx) => {
-  const category = ctx.message.text;
+  const category = ctx.message.text.trim(); // 🔥 trim() ተጨምሯል የኢሞጂ ስፔስ ስህተት እንዳይፈጥር
   try {
     const { data: dbProducts, error } = await supabase.from('products').select('*').eq('category', category);
-    if (error || !dbProducts || dbProducts.length === 0) {
-      return ctx.reply('በዚህ ምድብ ውስጥ በአሁኑ ሰዓት ዕቃ አልተመዘገበም። እባክዎ ቆይተው ይሞክሩ።', shopKeyboard);
+    
+    if (error) {
+      console.error('Supabase error:', error);
+      return ctx.reply('ይቅርታ፣ ከዳታቤዝ ላይ መረጃ ሲፈለግ ስህተት አጋጥሟል።', shopKeyboard);
     }
+
+    if (!dbProducts || dbProducts.length === 0) {
+      return ctx.reply(`በዚህ ምድብ (${category}) ውስጥ በአሁኑ ሰዓት ዕቃ አልተመዘገበም። እባክዎ ቆይተው ይሞክሩ።`, shopKeyboard);
+    }
+
     for (let item of dbProducts) {
       const txt = `🛍 *${item.name}*\n💰 ዋጋ: ${item.price} ብር\nℹ️ መግለጫ: ${item.description || 'የለውም'}`;
       const inlineBtn = Markup.inlineKeyboard([[Markup.button.callback('🛒 አሁን እዘዝ (Order)', `order_item_${item.id}`)]]);
+      
       if (item.image_url && item.image_url.trim() !== '') {
-        try { await ctx.replyWithPhoto(item.image_url, { caption: txt, parse_mode: 'Markdown', ...inlineBtn }); } 
-        catch { await ctx.reply(txt, { parse_mode: 'Markdown', ...inlineBtn }); }
+        try { 
+          await ctx.replyWithPhoto(item.image_url, { caption: txt, parse_mode: 'Markdown', ...inlineBtn }); 
+        } catch (err) { 
+          // Markdown Error ካለ ያለ ማርክዳውን እንዲልክ ማስተማመኛ
+          await ctx.reply(`🛍 ${item.name}\n💰 ዋጋ: ${item.price} ብር\nℹ️ መግለጫ: ${item.description || 'የለውም'}`, inlineBtn); 
+        }
       } else {
-        await ctx.reply(txt, { parse_mode: 'Markdown', ...inlineBtn });
+        try {
+          await ctx.reply(txt, { parse_mode: 'Markdown', ...inlineBtn });
+        } catch (err) {
+          await ctx.reply(`🛍 ${item.name}\n💰 ዋጋ: ${item.price} ብር\nℹ️ መግለጫ: ${item.description || 'የለውም'}`, inlineBtn);
+        }
       }
     }
-  } catch (err) { await ctx.reply('ይቅርታ፣ መረጃዎችን ከዳታቤዝ ላይ መሳብ አልተቻለም።', shopKeyboard); }
+  } catch (err) { 
+    await ctx.reply('ይቅርታ፣ መረጃዎችን ከዳታቤዝ ላይ መሳብ አልተቻለም።', shopKeyboard); 
+  }
 });
 
 // --- 🏠 4.2 የሚከራይ ቤትና ዶርም ክፍል ---
@@ -95,7 +112,7 @@ bot.hears('🏠 የሚከራይ ቤትና ዶርም ፈልግ', (ctx) => {
 
 const houseCategories = ['🛏 የተማሪዎች ዶርም', '🏢 ስቱዲዮ አፓርትመንት', '🏡 ቪላ / ሰርቪስ ቤት'];
 bot.hears(houseCategories, async (ctx) => {
-  const category = ctx.message.text;
+  const category = ctx.message.text.trim();
   try {
     const { data: dbHouses, error } = await supabase.from('houses').select('*').eq('category', category);
     if (error || !dbHouses || dbHouses.length === 0) {
@@ -106,9 +123,10 @@ bot.hears(houseCategories, async (ctx) => {
       const inlineBtn = Markup.inlineKeyboard([[Markup.button.callback('📞 አሁን ተከራይ / አግኝ', `rent_house_${item.id}`)]]);
       if (item.image_url && item.image_url.trim() !== '') {
         try { await ctx.replyWithPhoto(item.image_url, { caption: txt, parse_mode: 'Markdown', ...inlineBtn }); } 
-        catch { await ctx.reply(txt, { parse_mode: 'Markdown', ...inlineBtn }); }
+        catch { await ctx.reply(`🏠 ${item.name}\n💰 ኪራይ: ${item.price}\nℹ️ መግለጫ: ${item.description || 'የለውም'}`, inlineBtn); }
       } else {
-        await ctx.reply(txt, { parse_mode: 'Markdown', ...inlineBtn });
+        try { await ctx.reply(txt, { parse_mode: 'Markdown', ...inlineBtn }); }
+        catch { await ctx.reply(`🏠 ${item.name}\n💰 ኪራይ: ${item.price}\nℹ️ መግለጫ: ${item.description || 'የለውም'}`, inlineBtn); }
       }
     }
   } catch (err) { await ctx.reply('ይቅርታ፣ የቤት መረጃዎችን መሳብ አልተቻለም።', houseKeyboard); }
@@ -130,15 +148,15 @@ bot.hears('📥 ዕቃዎች ለመመልከት', async (ctx) => {
       const inlineBtn = Markup.inlineKeyboard([[Markup.button.callback('📞 ለባለቤቱ ደውል', `call_owner_${item.id}`)]]);
       if (item.image_url && item.image_url.trim() !== '') {
         try { await ctx.replyWithPhoto(item.image_url, { caption: txt, parse_mode: 'Markdown', ...inlineBtn }); } 
-        catch { await ctx.reply(txt, { parse_mode: 'Markdown', ...inlineBtn }); }
+        catch { await ctx.reply(`🔄 ${item.name}\n💰 ዋጋ: ${item.price} ብር\nℹ️ መግለጫ: ${item.description || 'የለውም'}\n📞 ስልክ: ${item.contact || 'የለውም'}`, inlineBtn); }
       } else {
-        await ctx.reply(txt, { parse_mode: 'Markdown', ...inlineBtn });
+        try { await ctx.reply(txt, { parse_mode: 'Markdown', ...inlineBtn }); }
+        catch { await ctx.reply(`🔄 ${item.name}\n💰 ዋጋ: ${item.price} ብር\nℹ️ መግለጫ: ${item.description || 'የለውም'}\n📞 ስልክ: ${item.contact || 'የለውም'}`, inlineBtn); }
       }
     }
   } catch (err) { await ctx.reply('መረጃውን ማግኘት አልተቻለም።', usedKeyboard); }
 });
 
-// የራሴን ዕቃ ለመሸጥ ሲጫን በደረጃ መረጃ የመጠየቂያ ሎጂክ ማስጀመሪያ
 bot.hears('📤 የራሴን ዕቃ ለመሸጥ', (ctx) => {
   userSessions[ctx.from.id] = { step: 'ASK_SELL_NAME' };
   return ctx.reply('📝 እሺ፣ ለመሸጥ የሚፈልጉትን ያገለገለ *ዕቃ ስም* (ለምሳሌ፡ HP ላፕቶፕ) ይጻፉልኝ፦');
@@ -156,17 +174,16 @@ bot.hears('ℹ️ ስለ እኛ', (ctx) => {
   return ctx.reply(aboutText, { parse_mode: 'Markdown', ...aboutInlineKeyboard });
 });
 
-// 🔥 [አዲስ ባህሪ] አስተዳዳሪው አዲስ እቃ ሲጨምር ለሁሉም እንዲያስተላልፍ መፍቀጃ (ኮማንድ)
+// አስተዳዳሪው አዲስ እቃ ሲጨምር ለሁሉም እንዲያስተላልፍ መፍቀጃ (ኮማንድ)
 bot.command('broadcast', async (ctx) => {
-  if (ctx.from.id !== ADMIN_CHAT_ID) return; // ላንተ ብቻ እንዲሰራ
+  if (ctx.from.id !== ADMIN_CHAT_ID) return;
   
   const categoryInput = ctx.message.text.replace('/broadcast', '').trim();
   if (!categoryInput) {
-    return ctx.reply('⚠️ እባክህ የምድቡን ስም አብረህ ጻፍ። ለምሳሌ፦ /broadcast 👗 የሴቶች ልብስ');
+    return ctx.reply('⚠️ እባክህ የምድቡን ስም አብረህ ጻፍ。ለምሳሌ፦ /broadcast 👗 የሴቶች ልብስ');
   }
 
   try {
-    // 1. ሁሉንም ተጠቃሚዎች ከዳታቤዝ ማውጣት
     const { data: users, error } = await supabase.from('bot_users').select('chat_id');
     if (error || !users || users.length === 0) {
       return ctx.reply('📢 መልዕክት የሚላክላቸው ተጠቃሚዎች በዳታቤዙ ላይ አልተገኙም።');
@@ -177,14 +194,11 @@ bot.command('broadcast', async (ctx) => {
     let successCount = 0;
     ctx.reply(`⏳ ለ ${users.length} ተጠቃሚዎች መልዕክት መላክ ተጀምሯል...`);
 
-    // 2. ለእያንዳንዱ ሰው አንድ በአንድ መላክ
     for (let u of users) {
       try {
         await bot.telegram.sendMessage(u.chat_id, notificationText, { parse_mode: 'Markdown' });
         successCount++;
-      } catch (e) {
-        // ቦቱን ብሎክ ያደረጉ ሰዎችን ችላ ለማለት
-      }
+      } catch (e) {}
     }
     ctx.reply(`✅ 📢 መልዕክቱ በስኬት ተላልፏል! ለ ${successCount} ሰዎች ደርሷል።`);
   } catch (err) {
@@ -200,7 +214,6 @@ bot.on('text', async (ctx, next) => {
   if (!session) return next();
   const text = ctx.message.text;
 
-  // 🛍 --- 5.1 የአዳዲስ ዕቃዎች ትዕዛዝ መቀበያ መስመር ---
   if (session.step === 'ASK_NAME') {
     session.name = text;
     session.step = 'ASK_PHONE';
@@ -233,7 +246,6 @@ bot.on('text', async (ctx, next) => {
     return;
   }
 
-  // 🔄 --- 5.2 ያገለገሉ ዕቃዎች መሸጫ መስመር ---
   if (session.step === 'ASK_SELL_NAME') {
     session.sellName = text;
     session.step = 'ASK_SELL_PRICE';
@@ -268,11 +280,9 @@ bot.on('text', async (ctx, next) => {
 // ==========================================
 // 🛎 6. የውስጥ በተን ማዘዣዎች (Inline Actions)
 // ==========================================
-
-// 6.1 የ"ስለ እኛ" የውስጥ በተኖች ማዘዣ
 bot.action('about_services', async (ctx) => {
   await ctx.answerCbQuery();
-  const serviceExplanation = `💼 *የ Siralink Market የቦት አገልግሎት ማብራሪያ* 💼\n\nይህ ቦት ደንበኞችን እና ነጋዴዎችን/ባለቤቶችን በቀጥታ የሚያገናኝ ዘመናዊ የገበያ መድረክ ነው።\n\n🛍 *አዳዲስ ዕቃዎች:* የተለያዩ አዳዲስ አልባሳትን፣ ጫማዎችን እና ኤሌክትሮኒክሶችን በቀጥታ ከሱቆች መጋዘን በመምረጥ ማዘዝ ይችላሉ።\n🏠 *የቤትና ዶርም ኪራይ:* ለተማሪዎች ዶርም፣ ስቱዲዮ አፓርትመንት እና ቪላ ቤቶች መረጃ በማግኘት በቀላሉ ይከራያሉ።\n🔄 *ያገለገሉ ዕቃዎች:* የራስዎን ያገለገለ ዕቃ መረጃ በማስገባት መሸጥ ወይም በሌሎች የቀረቡ ዕቃዎችን ከባለቤቱ ጋር በመደወል መግዛት ይችላሉ።`;
+  const serviceExplanation = `💼 *የ Siralink Market የቦት አገልግሎት ማብራሪያ* 💼\n\nይህ ቦት ደንበኞችን እና ነጋዴዎችን/ባለቤቶችን በቀጥታ የሚያገናኝ ዘመናዊ የገበያ መድረክ ነው።\n\n🛍 *አዳዲስ ዕቃዎች:* የተለያዩ አዳዲስ አልባሳትን፣ ጫማዎችን እና ኤሌክትሮኒክሶችን በቀጥታ ከሱቆች መጋዘን በመምረጥ ማዘዝ ይችላሉ。\n🏠 *የቤትና ዶርም ኪራይ:* ለተማሪዎች ዶርም፣ ስቱዲዮ አፓርትመንት እና ቪላ ቤቶች መረጃ በማግኘት በቀላሉ ይከራያሉ።\n🔄 *ያገለገሉ ዕቃዎች:* የራስዎን ያገለገለ ዕቃ መረጃ በማስገባት መሸጥ ወይም በሌሎች የቀረቡ ዕቃዎችን ከባለቤቱ ጋር በመደወል መግዛት ይችላሉ።`;
   return ctx.reply(serviceExplanation, { parse_mode: 'Markdown', ...mainKeyboard });
 });
 
@@ -282,7 +292,6 @@ bot.action('about_customer_center', async (ctx) => {
   return ctx.reply(customerCenterText, { parse_mode: 'Markdown', ...mainKeyboard });
 });
 
-// 🛒 የድሮው የእቃዎች ማዘዣ ሎጂክ
 bot.action(/^order_item_(.+)$/, async (ctx) => {
   const productId = ctx.match[1];
   try {
