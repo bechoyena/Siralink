@@ -14,27 +14,27 @@ app.listen(PORT, '0.0.0.0', () => console.log(`Web Server running on port ${PORT
 // 🛍 3. የሱቅ ዕቃዎች መጋዘን (PRODUCTS DATA)
 // ==========================================
 const products = [
-  { id: 1, name: 'ያማረ የሴቶች የሐበሻ ቀሚስ', price: 3500, description: 'በእጅ ጥልፍ የተሰራ፣ ጥራት ካለው ማግ የተዘጋጀ።', category: 'clothes', image_url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c' },
-  { id: 2, name: 'የወንዶች ዘመናዊ ሱፍ', price: 6000, description: 'ለሰርግ እና ለተለያዩ ፕሮግራሞች የሚሆን ሙሉ ሱፍ።', category: 'men', image_url: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35' },
-  { id: 3, name: 'የወንዶች ስፖርት ጫማ (Sneakers)', price: 2800, description: 'ለረጅም መንገድ እና ለስፖርት የሚሆን ምቹ ጫማ።', category: 'shoes', image_url: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff' },
-  { id: 4, name: 'ስማርት ሰዓት (Smart Watch Series 9)', price: 2500, description: 'ቻርጅ ለረጅም ጊዜ የሚይዝ፣ የልብ ትርታ የሚለካ።', category: 'elec', image_url: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12' }
+  { id: 1, name: 'ያማረ የሴቶች የሐበሻ ቀሚስ', price: 3500, description: 'በእጅ ጥልፍ የተሰራ፣ ጥራት ካለው ማግ የተዘጋጀ።', category: 'clothes' },
+  { id: 2, name: 'የወንዶች ዘመናዊ ሱፍ', price: 6000, description: 'ለሰርግ እና ለተለያዩ ፕሮግራሞች የሚሆን ሙሉ ሱፍ።', category: 'men' },
+  { id: 3, name: 'የወንዶች ስፖርት ጫማ (Sneakers)', price: 2800, description: 'ለረጅም መንገድ እና ለስፖርት የሚሆን ምቹ ጫማ።', category: 'shoes' },
+  { id: 4, name: 'ስማርት ሰዓት (Smart Watch Series 9)', price: 2500, description: 'ቻርጅ ለረጅም ጊዜ የሚይዝ፣ የልብ ትርታ የሚለካ።', category: 'elec' }
 ];
 
 // ==========================================
 // 🏠 4. የኪራይ ቤቶችና ዶርሞች መረጃ (HOUSES DATA)
 // ==========================================
 const houses = [
-  { id: 101, name: 'ለተማሪዎች የሚሆን ምቹ ዶርም', price: '1,500 በወር', description: 'ዋይፋይ እና ውሃ የተሟላለት፣ ግቢው ሰላማዊ የሆነ ዶርም ከነአልጋው።', category: 'dorm', image_url: 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5' },
-  { id: 102, name: 'ዘመናዊ ስቱዲዮ አፓርትመንት (Studio)', price: '12,000 በወር', description: 'የራሱ ክላስ፣ ኪችን እና ባዝሩም ያለው ለአንድ ወይም ለሁለት ሰው የሚሆን።', category: 'studio', image_url: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af' },
-  { id: 103, name: 'ቪላ / ሰርቪስ ቤት (Villa)', price: '25,000 በወር', description: 'ሰፊ ግቢ ያለው፣ 3 መኝታ ክፍል ከትልቅ ሳሎን ጋር። ለመኖሪያ በጣም ምቹ።', category: 'villa', image_url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c' }
+  { id: 101, name: 'ለተማሪዎች የሚሆን ምቹ ዶርም', price: '1,500 በወር', description: 'ዋይፋይ እና ውሃ የተሟላለት፣ ግቢው ሰላማዊ የሆነ ዶርም ከነአልጋው።', category: 'dorm' },
+  { id: 102, name: 'ዘመናዊ ስቱዲዮ አፓርትመንት (Studio)', price: '12,000 በወር', description: 'የራሱ ክላስ፣ ኪችን እና ባዝሩም ያለው ለአንድ ወይም ለሁለት ሰው የሚሆን።', category: 'studio' },
+  { id: 103, name: 'ቪላ / ሰርቪስ ቤት (Villa)', price: '25,000 በወር', description: 'ሰፊ ግቢ ያለው፣ 3 መኝታ ክፍል ከትልቅ ሳሎን ጋር። ለመኖሪያ በጣም ምቹ።', category: 'villa' }
 ];
 
 // ==========================================
 // 🔄 5. ያገለገሉ ዕቃዎች መረጃ (USED ITEMS DATA)
 // ==========================================
 const usedItems = [
-  { id: 201, name: 'ያገለገለ ላፕቶፕ (HP Core i5)', price: 18000, description: '8GB RAM, 256GB SSD። ባትሪው 3 ሰዓት ይይዛል፣ ምንም አይነት ችግር የሌለበት።', contact: '0911223344', image_url: 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed' },
-  { id: 202, name: 'ባጃጅ (በጥሩ ሁኔታ ላይ ያለ)', price: 220000, description: 'ሞተሩ ያልተፈታ፣ ጥቂት ጊዜ ብቻ የሰራ ንፁህ ባጃጅ።', contact: '0912345678', image_url: 'https://images.unsplash.com/photo-1566442371445-667389650b28' }
+  { id: 201, name: 'ያገለገለ ላፕቶፕ (HP Core i5)', price: 18000, description: '8GB RAM, 256GB SSD። ባትሪው 3 ሰዓት ይይዛል፣ ምንም አይነት ችግር የሌለበት።', contact: '0911223344' },
+  { id: 202, name: 'ባጃጅ (በጥሩ ሁኔታ ላይ ያለ)', price: 220000, description: 'ሞተሩ ያልተፈታ፣ ጥቂት ጊዜ ብቻ የሰራ ንፁህ ባጃጅ።', contact: '0912345678' }
 ];
 
 // ==========================================
@@ -82,7 +82,7 @@ bot.action(/^get_prod_(.+)$/, async (ctx) => {
 
   for (let item of filtered) {
     const txt = `🛍 *${item.name}*\n💰 ዋጋ: ${item.price} ብር\nℹ️ መግለጫ: ${item.description}`;
-    await ctx.replyWithPhoto(item.image_url, { caption: txt, parse_mode: 'Markdown', ...Markup.inlineKeyboard([[Markup.button.callback('🛒 አሁን እዘዝ (Order)', `order_item_${item.id}`)]]) });
+    await ctx.reply(txt, { parse_mode: 'Markdown', ...Markup.inlineKeyboard([[Markup.button.callback('🛒 አሁን እዘዝ (Order)', `order_item_${item.id}`)]]) });
   }
   await ctx.reply('ሌላ ዕቃ መመልከት ይፈልጋሉ?', Markup.inlineKeyboard([backToMain]));
 });
@@ -106,7 +106,7 @@ bot.action(/^get_house_(.+)$/, async (ctx) => {
 
   for (let item of filtered) {
     const txt = `🏠 *${item.name}*\n💰 ኪራይ: ${item.price}\nℹ️ መግለጫ: ${item.description}`;
-    await ctx.replyWithPhoto(item.image_url, { caption: txt, parse_mode: 'Markdown', ...Markup.inlineKeyboard([[Markup.button.callback('📞 አሁን ተከራይ / አግኝ', `rent_house_${item.id}`)]]) });
+    await ctx.reply(txt, { parse_mode: 'Markdown', ...Markup.inlineKeyboard([[Markup.button.callback('📞 አሁን ተከራይ / አግኝ', `rent_house_${item.id}`)]]) });
   }
   await ctx.reply('ሌላ የቤት አማራጭ ማየት ይፈልጋሉ?', Markup.inlineKeyboard([backToMain]));
 });
@@ -125,7 +125,7 @@ bot.action('used_main', (ctx) => {
 bot.action('view_used', async (ctx) => {
   for (let item of usedItems) {
     const txt = `🔄 *${item.name}*\n💰 ዋጋ: ${item.price} ብር\nℹ️ መግለጫ: ${item.description}\n📞 ስልክ: ${item.contact}`;
-    await ctx.replyWithPhoto(item.image_url, { caption: txt, parse_mode: 'Markdown', ...Markup.inlineKeyboard([[Markup.button.callback('📞 ለባለቤቱ ደውል', `call_owner_${item.id}`)]]) });
+    await ctx.reply(txt, { parse_mode: 'Markdown', ...Markup.inlineKeyboard([[Markup.button.callback('📞 ለባለቤቱ ደውል', `call_owner_${item.id}`)]]) });
   }
   await ctx.reply('ተጨማሪ ያገለገሉ ዕቃዎችን መፈለግ ይፈልጋሉ?', Markup.inlineKeyboard([backToMain]));
 });
@@ -145,7 +145,7 @@ bot.action('about_us_main', (ctx) => {
 });
 
 bot.action(/^order_item_(.+)$/, (ctx) => ctx.reply('🛍 እቃውን ለማዘዝ ስምዎትን እና አድራሻዎን ይጻፉልን። የሱቁ ባለቤት ያገኝዎታል።'));
-bot.action(/^rent_house_(.+)$/, (ctx) => ctx.reply('📞 ቤቱን ለመከራየት አድራሻዎን እና ስልክዎን ይተዉልን። ደላላው/ባለቤቱ በውስጥ መስመር ያገኝዎታል።'));
+bot.action(/^rent_house_(.+)$/, (ctx) => ctx.reply('📞 ቤቱን ለመከራየት አድራሻዎን እና ስልክዎን ይተዉልን። ደላላው/ባለቤቱ በውስጥ መስмер ያገኝዎታል።'));
 bot.action(/^call_owner_(.+)$/, (ctx) => ctx.reply('📱 እቃው ላይ በተጠቀሰው ስልክ ቁጥር በመደወል በቀጥታ ከባለቤቱ ጋር መነጋገር ይችላሉ።'));
 
 // 🚀 8. አስተማማኝ ማስነሻ (Clean Long Polling)
