@@ -132,10 +132,22 @@ bot.hears('📥 ዕቃዎች ለመመልከት', async (ctx) => {
   } catch (err) { await ctx.reply('መረጃውን ማግኘት አልተቻለም።', usedKeyboard); }
 });
 
-// 🔥 የራሴን ዕቃ ለመሸጥ ሲጫን በደረጃ መረጃ የመጠየቂያ ሎጂክ ማስጀመሪያ
+// የራሴን ዕቃ ለመሸጥ ሲጫን በደረጃ መረጃ የመጠየቂያ ሎጂክ ማስጀመሪያ
 bot.hears('📤 የራሴን ዕቃ ለመሸጥ', (ctx) => {
   userSessions[ctx.from.id] = { step: 'ASK_SELL_NAME' };
   return ctx.reply('📝 እሺ፣ ለመሸጥ የሚፈልጉትን ያገለገለ *ዕቃ ስም* (ለምሳሌ፡ HP ላፕቶፕ) ይጻፉልኝ፦');
+});
+
+// --- ℹ️ 4.4 ስለ እኛ ክፍል (ባንተ ማስተካከያ መሰረት የተገነባ) ---
+bot.hears('ℹ️ ስለ እኛ', (ctx) => {
+  const aboutText = `✨ *እንኳን ወደ Siralink Market ሁለገብ የንግድና ስራ ማዕከል በደህና መጡ!*\n\n❓ ስለ Siralink Market ምን ማወቅ ይፈልጋሉ? ከታች ካሉት በተኖች ይምረጡ፦`;
+  
+  const aboutInlineKeyboard = Markup.inlineKeyboard([
+    [Markup.button.callback('💼 የምንሰጣቸው አገልግሎት', 'about_services')],
+    [Markup.button.callback('🏢 የደንበኞች ማእከል', 'about_customer_center')]
+  ]);
+
+  return ctx.reply(aboutText, { parse_mode: 'Markdown', ...aboutInlineKeyboard });
 });
 
 // ==========================================
@@ -179,7 +191,7 @@ bot.on('text', async (ctx, next) => {
     return;
   }
 
-  // 🔄 --- 5.2 ያገለገሉ ዕቃዎች መሸጫ መስመር (ይህ ነው ለአንተ ቀጥታ የሚልከው!) ---
+  // 🔄 --- 5.2 ያገለገሉ ዕቃዎች መሸጫ መስመር ---
   if (session.step === 'ASK_SELL_NAME') {
     session.sellName = text;
     session.step = 'ASK_SELL_PRICE';
@@ -195,16 +207,13 @@ bot.on('text', async (ctx, next) => {
     const username = ctx.message.from.username ? `@${ctx.message.from.username}` : 'የለውም';
 
     try {
-      // 1. መረጃውን ሱፓቤዝ 'used_items' table ላይ መመዝገብ
       await supabase.from('used_items').insert([
-        { name: session.sellName, price: session.sellPrice, contact: session.sellPhone, category: '📥 ዕቃዎች ለመመልከት', description: `በተጠቃሚ ${username} የተላከ` }
+        { name: session.sellName, price: session.sellPrice, contact: session.sellPhone, description: `በተጠቃሚ ${username} የተላከ` }
       ]);
 
-      // 2. 🚨 ቀጥታ ላንተ (ADMIN) ማሳወቂያ መላክ
       const adminAlert = `🚨 *አዲስ ያገለገለ ዕቃ ሽያጭ ጥያቄ መጥቷል!* 🚨\n\n👤 *ላኪ:* ${ctx.message.from.first_name} (${username})\n📦 *ዕቃ:* ${session.sellName}\n💰 *ዋጋ:* ${session.sellPrice} ብር\n📞 *ስልክ:* ${session.sellPhone}`;
       await bot.telegram.sendMessage(ADMIN_CHAT_ID, adminAlert, { parse_mode: 'Markdown' });
 
-      // 3. ለደንበኛው መልስ መስጠት
       await ctx.reply('📥 የእቃዎ መረጃ ደርሶናል። መረጃው ቀጥታ በቦቱ ላይ ተለጥፏል! እናመሰግናለን።', mainKeyboard);
       delete userSessions[ctx.from.id];
     } catch (err) {
@@ -217,6 +226,21 @@ bot.on('text', async (ctx, next) => {
 // ==========================================
 // 🛎 6. የውስጥ በተን ማዘዣዎች (Inline Actions)
 // ==========================================
+
+// 🔥 6.1 አዲሶቹ የ"ስለ እኛ" የውስጥ በተኖች ማዘዣ
+bot.action('about_services', async (ctx) => {
+  await ctx.answerCbQuery();
+  const serviceExplanation = `💼 *የ Siralink Market የቦት አገልግሎት ማብራሪያ* 💼\n\nይህ ቦት ደንበኞችን እና ነጋዴዎችን/ባለቤቶችን በቀጥታ የሚያገናኝ ዘመናዊ የገበያ መድረክ ነው።\n\n🛍 *አዳዲስ ዕቃዎች:* የተለያዩ አዳዲስ አልባሳትን፣ ጫማዎችን እና ኤሌክትሮኒክሶችን በቀጥታ ከሱቆች መጋዘን በመምረጥ ማዘዝ ይችላሉ።\n🏠 *የቤትና ዶርም ኪራይ:* ለተማሪዎች ዶርም፣ ስቱዲዮ አፓርትመንት እና ቪላ ቤቶች መረጃ በማግኘት በቀላሉ ይከራያሉ።\n🔄 *ያገለገሉ ዕቃዎች:* የራስዎን ያገለገለ ዕቃ መረጃ በማስገባት መሸጥ ወይም በሌሎች የቀረቡ ዕቃዎችን ከባለቤቱ ጋር በመደወል መግዛት ይችላሉ።`;
+  return ctx.reply(serviceExplanation, { parse_mode: 'Markdown', ...mainKeyboard });
+});
+
+bot.action('about_customer_center', async (ctx) => {
+  await ctx.answerCbQuery();
+  const customerCenterText = `🏢 *የደንበኞች ማዕከል መረጃ*\n\n📍 *አድራሻ፦* ሀዋሳ፤ ኢትዮጵያ\n\n📞 *ስልክ፦*\n• 0946662487\n• 0701404704\n\n📱 *የቴሌግራም አድራሻዎች፦*\n🌐 @SiralinkMarket\n👤 @ad_is17\n👤 @ad_is1`;
+  return ctx.reply(customerCenterText, { parse_mode: 'Markdown', ...mainKeyboard });
+});
+
+// 🛒 የድሮው የእቃዎች ማዘዣ ሎጂክ (እንዳለ ሳይነካ የቀጠለ)
 bot.action(/^order_item_(.+)$/, async (ctx) => {
   const productId = ctx.match[1];
   try {
