@@ -5,8 +5,8 @@ const { createClient } = require('@supabase/supabase-js');
 // 1. ቦት እና ሱፓቤዝ መገናኛ
 const bot = new Telegaf('8577893575:AAE0YpDFrK8GgYBP46uqTRsdM6zGkpec1kU');
 
-const SUPABASE_URL = 'postgresql://postgres:[U1VUggvZUZatAUvN]@db.jdusgofvctxmfgrnrgjq.supabase.co:5432/postgresL'; // የራሰህን የሱፓቤዝ URL አስገባ
-const SUPABASE_KEY = 'sb_publishable_F95xARLYzmksRCZZumZSKQ_qbWYmxk-'; // የራሰህን ANON KEY አስገባ
+const SUPABASE_URL = 'https://gyooossgagycyeyffjfr.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5b29vc3NnYWd5Y3lleWZmamZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5Mzk5ODgsImV4cCI6MjA5ODUxNTk4OH0.k85DGyIEU_wEzZhE6Qbo-ssiXbhT2gR69SH7KVOZ4NY';
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // 2. ዌብ ሰርቨር (Render እንዳይዘጋ)
