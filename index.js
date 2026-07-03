@@ -16,6 +16,50 @@ const PORT = process.env.PORT || 10000;
 app.get('/', (req, res) => res.send('Siralink Bot is Live!'));
 app.listen(PORT, '0.0.0.0', () => console.log(`Web Server running on port ${PORT}`));
 
+// 🖼 ምርቱን አይቶ ተዛማች ፎቶ በራሱ የሚመርጥ አዲስ ፈንክሽን
+function generateMatchedImage(productName, categoryName) {
+  const name = productName.toLowerCase();
+  const cat = categoryName.toLowerCase();
+
+  if (name.includes('ጫማ') || name.includes('shoe') || name.includes('sneaker') || cat.includes('ጫማ')) {
+    return 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500';
+  }
+  if (name.includes('ልብስ') || name.includes('ቲሸርት') || name.includes('ጃኬት') || name.includes('ሱፍ') || cat.includes('አልባሳት')) {
+    return 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=500';
+  }
+  if (name.includes('ስልክ') || name.includes('ላፕቶፕ') || name.includes('ኮምፒውተር') || name.includes('comput') || cat.includes('ኤሌክትሮኒክስ')) {
+    return 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=500';
+  }
+  if (name.includes('ቤት') || name.includes('መሬት') || name.includes('ዶርም') || cat.includes('መሬት') || cat.includes('ቤት')) {
+    return 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=500';
+  }
+  if (name.includes('አልጋ') || name.includes('ወንበር') || name.includes('ሶፋ') || cat.includes('ቤት ዕቃዎች')) {
+    return 'https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?w=500';
+  }
+  // ምንም ካልተገኘ አጠቃላይ ማራኪ የገበያ ምስል
+  return 'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=500';
+}
+
+// 📢 አዲስ ዕቃ ሲገባ ለሁሉም ደንበኞች በራሱ ጊዜ መልዕክት የሚበትን አዲስ ፈንክሽን
+async function autoBroadcastNewProduct(prodName, catName, prodPrice) {
+  try {
+    const { data: users, error } = await supabase.from('bot_users').select('chat_id');
+    if (error || !users || users.length === 0) return;
+    
+    const broadcastText = `🔔 *አዲስ ምርት በደንበኛ ተጨምሯል!* 🔔\n\n📦 *የምርት ስም:* ${prodName}\n💰 *ዋጋ:* ${prodPrice} ብር\n🗂 *ምድብ:* ${catName}\n\nአሁኑኑ ቦቱ ውስጥ በ "👥 በደንበኞች የተጨመሩ" ምድብ ስር ገብተው መመልከት ይችላሉ! 🛍✨`;
+    
+    for (let u of users) {
+      try {
+        await bot.telegram.sendMessage(u.chat_id, broadcastText, { parse_mode: 'Markdown' });
+      } catch (e) {
+        // የታገዱ ወይም የሌሉ አካውንቶች ሲያጋጥሙ እንዳይቋረጥ
+      }
+    }
+  } catch (err) {
+    console.error('Auto broadcast error:', err);
+  }
+}
+
 // --- STEP 1: ዋናው ማውጫ ገፅ (የነበሩት በኢሞጂያቸው) ---
 const mainKeyboard = Markup.keyboard([
   ['🛍 አዳድስ እቃዎች', '🏠 የቤት ኪራይ/ዶርም'],
@@ -44,7 +88,7 @@ const usedKeyboard = Markup.keyboard([
   ['🔙 ወደ ዋናው ማውጫ']
 ]).resize();
 
-// --- STEP 5: በደንበኞች የተጨመሩ ማውጫ (ለስም ተለዋጭና ለየት ያሉ ኢሞጂዎች የተደረጉበት) ---
+// --- STEP 5: በደንበኞች የተጨመሩ ማውጫ ---
 const customerCatKeyboard = Markup.keyboard([
   ['👔 አልባሳትና ጫማ', '🛋 የቤት ዕቃዎች ምድብ'],
   ['💻 ኤሌክትሮኒክስ ምድብ', '🗺 መሬት/ቤት'],
@@ -88,11 +132,14 @@ bot.hears(customerCategories, async (ctx, next) => {
   }
 
   const clickedText = ctx.message.text.trim();
-  // Supabase ላይ ግጭት እንዳይፈጥር ወደ ሚፈልገው መለያ ፅሁፍ ማስተካከያ
+  
+  // 🔄 ምድቦች ከዳታቤዝ ጋር በትክክል እንዲገጥሙ የተደረገ ማስተካከያ (አንድም ስም አይጠፋም)
   let dbCategory = clickedText;
-  if (clickedText === '🛋 የቤት ዕቃዎች ምድብ') dbCategory = 'የቤት ዕቃዎች';
-  if (clickedText === '💻 ኤሌክትሮኒክስ ምድብ') dbCategory = 'ኤሌክትሮኒክስ';
-  if (clickedText === '⚙️ ያገለገሉ ዕቃዎች ምድብ') dbCategory = 'ያገለገሉ ዕቃዎች';
+  if (clickedText === '👔 አልባሳትና ጫማ') dbCategory = '👔 አልባሳትና ጫማ';
+  if (clickedText === '🛋 የቤት ዕቃዎች ምድብ') dbCategory = '🛋 የቤት ዕቃዎች ምድብ';
+  if (clickedText === '💻 ኤሌክትሮኒክስ ምድብ') dbCategory = '💻 ኤሌክትሮኒክስ ምድብ';
+  if (clickedText === '🗺 መሬት/ቤት') dbCategory = '🗺 መሬት/ቤት';
+  if (clickedText === '⚙️ ያገለገሉ ዕቃዎች ምድብ') dbCategory = '⚙️ ያገለገሉ ዕቃዎች ምድብ';
 
   try {
     const { data: items, error } = await supabase.from('customer_products').select('*').eq('category', dbCategory);
@@ -128,7 +175,6 @@ bot.hears(shopItems, async (ctx, next) => {
   }
 
   const clickedText = ctx.message.text.trim();
-  // Supabase ላይ በነበረው ፊደል እንዲያነብ ማድረጊያ
   let category = clickedText;
   if (clickedText === '🔌 ኤሌክትሮንክስ') category = 'ኤሌክትሮንክስ';
   if (clickedText === '🛍 የቤት ዕቃዎች') category = 'የቤት ዕቃዎች';
@@ -288,7 +334,7 @@ bot.on(['text', 'photo'], async (ctx, next) => {
     const username = ctx.message.from.username ? `@${ctx.message.from.username}` : 'የለውም';
     try {
       await supabase.from('used_items').insert([{ name: session.sellName, price: session.sellPrice, contact: session.sellPhone, phone: session.sellPhone, description: `በተጠቃሚ ${username} የተላከ` }]);
-      await ctx.reply('📥 የእቃዎ መረጃ ደርሶናል። መረጃው ቀጥታ በቦቱ ላይ ተለጥፏል!', mainKeyboard);
+      await ctx.reply('📥 የእቃዎ መፈላጊ ደርሶናል። መረጃው ቀጥታ በቦቱ ላይ ተለጥፏል!', mainKeyboard);
     } catch (err) { await ctx.reply('📥 መረጃው በተለዋጭ መንገድ ተመዝግቧል።', mainKeyboard); }
     delete userSessions[ctx.from.id];
     return;
@@ -345,7 +391,12 @@ bot.on(['text', 'photo'], async (ctx, next) => {
     return ctx.reply('📸 ምርቱ *ፎቶ ካለው* አሁን ይላኩ፤ ከሌለው *ፎቶ የለም* ብለው ይጻፉ፦');
   }
   if (session.step === 'ADD_PROD_PHOTO') {
-    session.addProdPhoto = photoId || '';
+    // 📸 ደንበኛው "ፎቶ የለም" ካለ ተዛማች ፎቶ በራሱ ጀነሬት የማድረጊያ ሎጂክ
+    if (!photoId || text.toLowerCase().includes('የለም') || text.toLowerCase().includes('no')) {
+      session.addProdPhoto = generateMatchedImage(session.addProdName, session.tempCat || '');
+    } else {
+      session.addProdPhoto = photoId;
+    }
     session.step = 'ADD_PROD_CAT';
     return ctx.reply('🗂 ይህ ምርት በየትኛው *የዕቃ ካታጎሪ* ውስጥ እንዲመደብ ይፈልጋሉ? ከታች ካሉት አማራጮች አንዱን ይምረጡ፦', selectCatKeyboard);
   }
@@ -369,13 +420,15 @@ bot.on(['text', 'photo'], async (ctx, next) => {
     session.addProdPhone = text;
     const username = ctx.from.username ? `@${ctx.from.username}` : 'የለውም';
     
-    // Supabase ላይ ከነባሮቹ ጋር ግጭት እንዳይፈጠር የስም ማስተካከያ
+    // 🔄 የካቴጎሪ ስሞችን ሳይቀነሱ ከነኢሞጂያቸው ሙሉ በሙሉ እዚህም እንዲመዘገቡ ማድረጊያ
     let dbCatName = session.tempCat;
-    if (session.tempCat === '🛋 የቤት ዕቃዎች ምድብ') dbCatName = 'የቤት ዕቃዎች';
-    if (session.tempCat === '💻 ኤሌክትሮኒክስ ምድብ') dbCatName = 'ኤሌክትሮኒክስ';
-    if (session.tempCat === '⚙️ ያገለገሉ ዕቃዎች ምድብ') dbCatName = 'ያገለገሉ ዕቃዎች';
 
-    const prodAlert = `➕ *በደንበኛ አዲስ ምርት ተመዝግቧል!* ➕\n\n📦 *የምርት ስም:* ${session.addProdName}\n💰 *ዋጋ:* ${session.addProdPrice} ብር\n🗂 *ካታጎሪ:* ${dbCatName}\nℹ️ *መግለጫ:* ${session.addProdDesc}\n🏢 *ድርጅት/አድራሻ:* ${session.addProdAddress}\n📞 *ስልክ ቁጥር:* ${session.addProdPhone}\n👤 *አስመዝጋቢ:* ${ctx.from.first_name} (${username})`;
+    // 📸 ፎቶ የለም ከተባለ በምድቡም ጭምር አይቶ ድጋሚ ማረጋገጫ ምስል መስጫ
+    if (!session.addProdPhoto || session.addProdPhoto.startsWith('http') === false && session.addProdPhoto === '') {
+      session.addProdPhoto = generateMatchedImage(session.addProdName, dbCatName);
+    }
+
+    const prodAlert = `➕ *በደንበኛ አዲስ ምርት ተመዝግቧል!* ➕\n\n📦 *የምርት ስም:* ${session.addProdName}\n💰 *ዋጋ:* ${session.addProdPrice} ብር\n🗂 *ካታጎሪ:* ${dbCatName}\nℹ *መግለጫ:* ${session.addProdDesc}\n🏢 *ድርጅት/አድራሻ:* ${session.addProdAddress}\n📞 *ስልክ ቁጥር:* ${session.addProdPhone}\n👤 *አስመዝጋቢ:* ${ctx.from.first_name} (${username})`;
     
     try {
       await supabase.from('customer_products').insert([
@@ -389,10 +442,15 @@ bot.on(['text', 'photo'], async (ctx, next) => {
           image_url: session.addProdPhoto
         }
       ]);
+      
       await bot.telegram.sendMessage(ADMIN_CHAT_ID, prodAlert, { parse_mode: 'Markdown' });
-      if (session.addProdPhoto) {
+      if (session.addProdPhoto && !session.addProdPhoto.startsWith('http')) {
         try { await bot.telegram.sendPhoto(ADMIN_CHAT_ID, session.addProdPhoto, { caption: `ከላይ ለተመዘገበው ምርት የተላከ ፎቶ` }); } catch (e) {}
       }
+
+      // 📢 አውቶማቲክ ብሮድካስት - ምርቱ ሲመዘገብ ለሁሉም ደንበኞች መልዕክት ይልካል
+      autoBroadcastNewProduct(session.addProdName, dbCatName, session.addProdPrice);
+
       await ctx.reply('🎉 ምርትዎ በተሳካ ሁኔታ ተመዝግቧል! በቅርቡ በደንበኞች ማውጫ ገጽ ላይ ይፋ ይሆናል።', shopKeyboard);
     } catch (err) {
       await ctx.reply('❌ ምርቱን በዳታቤዝ ላይ መመዝገብ አልተቻለም። ለአስተዳዳሪው ተላልፏል።', shopKeyboard);
@@ -425,7 +483,7 @@ bot.action('confirm_cat_no', async (ctx) => {
 bot.command('broadcast', async (ctx) => {
   if (ctx.from.id !== ADMIN_CHAT_ID) return;
   const categoryInput = ctx.message.text.replace('/broadcast', '').trim();
-  if (!categoryInput) return ctx.reply('⚠️ እባክህ የምድቡን ስም አብረህ ጻፍ。 ለምሳሌ፦ /broadcast የሴቶች ልብስ');
+  if (!categoryInput) return ctx.reply('⚠️ እባክህ የምድቡን ስም አብረህ ጻፍ። ለምሳሌ፦ /broadcast የሴቶች ልብስ');
   try {
     const { data: users, error } = await supabase.from('bot_users').select('chat_id');
     if (error || !users || users.length === 0) return ctx.reply('📢 ተጠቃሚዎች አልተገኙም።');
@@ -445,20 +503,20 @@ bot.action('about_services', async (ctx) => {
                        `፩. *የሱቅ ምርቶች (አዳዲስ ዕቃዎች)፦* ታዋቂ ሱቆችና ድርጅቶች አዳዲስ አልባሳትን፣ ጫማዎችን፣ ኤሌክትሮኒክስና የቤት ቁሳቁሶችን ለገበያ የሚያቀርቡበት ምድብ ነው።\n\n` +
                        `፪. *የቤትና ዶርም ኪራይ ማዕከል፦* ተማሪዎች ለትምህርት ምቹ የሆኑ ዶርሞችን፣ ግለሰቦች ደግሞ አፓርትመንት፣ ቪላ እና ሰርቪስ ቤቶችን በቀላሉ የሚከራዩበትና የሚፈልጉበት ክፍል ነው።\n\n` +
                        `፫. *የቤት/መሬት ሽያጭ ጥቆማ፦* የሚሸጡ መሬቶችንና ቤቶችን አድራሻና ስፋት በመሙላት ፈጣን የንግድ ትስስር የሚፈጥርበት ዘመናዊ አማራጭ ነው።\n\n` +
-                       `፬. *ያገለገሉ ዕቃዎች ሽያጭ፦* ማንኛውም ተጠቃሚ የራሱን ያገለገሉ ዕቃዎች ዋጋና ስልክ በመጥቀስ በቀጥታ ለገዢዎች ማቅረብና መሸጥ ይችላል።\n\n` +
+                       `፬. *ያገለገሉ ዕቃዎች ሽያጭ፦* ማንኛውም ተጠቃሚ የራሱን ያገለገሉ ዕቃዎች ዋጋና ስልክ በመጥቀስ በቀጥታ ለገዢዎች ማቅረብና መሸጥ ይችላል。\n\n` +
                        `፭. *የደንበኞች ካታጎሪ፦* ደንበኞች የራሳቸውን አዳዲስ ምርቶች በፎቶ ወይም በጽሑፍ በየምድቡ በመመዝገብ ለሺዎች የሚደርሱበት ነፃ የገበያ መድረክ ነው።`;
   return ctx.reply(servicesText, { parse_mode: 'Markdown' });
 });
 
-// --- የደንበኞች ማዕከል (የቴሌግራም ሊንኮች የተመለሱበት) ---
+// --- የደንበኞች ማዕከል ---
 bot.action('about_customer_center', async (ctx) => {
   await ctx.answerCbQuery();
   const customerCenterText = `🏢 *የደንበኞች ማዕከል መረጃ* 🏢\n\n` +
                              `📍 *አድራሻ፦* ሀዋሳ፤ ኢትዮጵያ\n` +
                              `📞 *ስልክ፦* 0946662487\n\n` +
-                             `🌐 *ይፋዊ የቴሌግራም ገጾቻችን፦*\n` +
+                             `🌐 *ይፋዊ የቴሌግราม ገጾቻችን፦*\n` +
                              `────────────────────\n` +
-                             `📣 ቻናል: @SiralnikMarket\n` +
+                             `📣 ቻናል: @SiralinkMarket\n` +
                              `────────────────────\n` +
                              `👤 ማናጀር 1: @ad_is17\n` +
                              `────────────────────\n` +
