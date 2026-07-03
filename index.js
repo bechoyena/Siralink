@@ -16,44 +16,44 @@ const PORT = process.env.PORT || 10000;
 app.get('/', (req, res) => res.send('Siralink Bot is Live!'));
 app.listen(PORT, '0.0.0.0', () => console.log(`Web Server running on port ${PORT}`));
 
-// 📱 ኪቦርዶች
+// 📱 ኪቦርዶች (ለእይታ እንዲያምሩ አጠር ተደርገው በ2 መስመር የተደረደሩ)
 const mainKeyboard = Markup.keyboard([
-  ['🛍 አዳዲስ ዕቃዎችን ይግዙ', '🏠 የሚከራይ ቤትና ዶርም ፈልግ'],
-  ['🔄 ያገለገሉ ዕቃዎችን ይግዙ/ይሽጡ', '👥 በደንበኞች የተጨመሩ ምርቶች'],
+  ['🛍 አዳዲስ ዕቃዎች', '🏠 የቤት ኪራይ/ዶርም'],
+  ['🔄 ያገለገሉ ዕቃዎች', '👥 በደንበኞች የተጨመሩ'],
   ['ℹ️ ስለ እኛ']
 ]).resize();
 
 const shopKeyboard = Markup.keyboard([
   ['👗 የሴቶች ልብስ', '👔 የወንዶች ልብስ'],
   ['👟 ጫማዎች', '📱 ኤሌክትሮኒክስ'],
-  ['🛋 የቤት ውስጥ ዕቃዎች', '➕ አዳዲስ ምርቶችን ይጨምሩ'],
+  ['🛋 የቤት ዕቃዎች', '➕ አዲስ ዕቃ ጨምር'],
   ['🔙 ወደ ዋናው ማውጫ']
 ]).resize();
 
 const houseKeyboard = Markup.keyboard([
-  ['🛏 የተማሪዎች ዶርም', '🏢 ስቱዲዮ አፓርትመንት'],
-  ['🏡 ቪላ / ሰርቪስ ቤት', '📌 ጥቆማ (የሚሸጥ መሬት/ቤት)'],
+  ['🛏 ተማሪዎች ዶርም', '🏢 አፓርትመንት'],
+  ['🏡 ቪላ / ሰርቪስ', '📌 የቤት/መሬት ጥቆማ'],
   ['🔙 ወደ ዋናው ማውጫ']
 ]).resize();
 
 const usedKeyboard = Markup.keyboard([
-  ['📥 ዕቃዎች ለመመልከት', '📤 የራሴን ዕቃ ለመሸጥ'],
+  ['📥 ዕቃዎች እይ', '📤 ዕቃህን ሽጥ'],
   ['🔙 ወደ ዋናው ማውጫ']
 ]).resize();
 
 // በደንበኞች የተጨመሩ ካታጎሪዎች ኪቦርድ
 const customerCatKeyboard = Markup.keyboard([
-  ['👗 አልባሳትና ጫማዎች', '🛋 የቤት ውስጥ ዕቃዎች'],
+  ['👗 አልባሳትና ጫማ', '🛋 የቤት ዕቃዎች'],
   ['📱 ኤሌክትሮኒክስ', '🏡 መሬት/ቤት'],
-  ['🔄 ያገለገሉ ማንኛውም አይነት ዕቃ'],
+  ['🔄 ያገለገሉ ዕቃዎች'],
   ['🔙 ወደ ዋናው ማውጫ']
 ]).resize();
 
 // ለደንበኞች ምርጫ የሚቀርብ ካታጎሪ ኪቦርድ (በምዝገባ ወቅት)
 const selectCatKeyboard = Markup.keyboard([
-  ['👗 አልባሳትና ጫማዎች', '🛋 የቤት ውስጥ ዕቃዎች'],
+  ['👗 አልባሳትና ጫማ', '🛋 የቤት ዕቃዎች'],
   ['📱 ኤሌክትሮኒክስ', '🏡 መሬት/ቤት'],
-  ['🔄 ያገለገሉ ማንኛውም አይነት ዕቃ']
+  ['🔄 ያገለገሉ ዕቃዎች']
 ]).resize();
 
 bot.telegram.setMyDescription("እንኳን ወደ Siralink የገበያ መድረክ በሰላም መጡ! 👋\n\nይህ ቦት አዳዲስና ያገለገሉ ዕቃዎችን ለመግዛትና ለመሸጥ፣ የሚከራዩ ቤቶችንና ዶርሞችን በቀላሉ ለማግኘት እንዲሁም የሚሸጡ መሬትና ቤቶችን ለመጠቆም የሚረዳ ሁለገብ የገበያ መገናኛ ቦት ነው።\n\nለመጀመር ከታች ያለውን START የሚለውን ይጫኑ! 👇").catch(console.error);
@@ -72,17 +72,25 @@ bot.hears('🔙 ወደ ዋናው ማውጫ', (ctx) => {
 });
 
 // --- 👥 በደንበኞች የተጨመሩ ምርቶች ማውጫ ---
-bot.hears('👥 በደንበኞች የተጨመሩ ምርቶች', (ctx) => {
+bot.hears('👥 በደንበኞች የተጨመሩ', (ctx) => {
   return ctx.reply('👥 በደንበኞች የተመዘገቡ የገበያ ምርቶች ማውጫ\n\nለመመልከት የሚፈልጉትን ምድብ ይምረጡ፦', customerCatKeyboard);
 });
 
-const customerCategories = ['👗 አልባሳትና ጫማዎች', '🛋 የቤት ውስጥ ዕቃዎች', '📱 ኤሌክትሮኒክስ', '🏡 መሬት/ቤት', '🔄 ያገለገሉ ማንኛውም አይነት ዕቃ'];
+// ለደንበኞች የተጨመሩ ምርቶች ብቻ ምላሽ መስጫ
+const customerCategories = ['👗 አልባሳትና ጫማ', '🛋 የቤት ዕቃዎች', '📱 ኤሌክትሮኒክስ', '🏡 መሬት/ቤት', '🔄 ያገለገሉ ዕቃዎች'];
 bot.hears(customerCategories, async (ctx) => {
-  const category = ctx.message.text.trim();
+  const clickedText = ctx.message.text.trim();
+  const session = userSessions[ctx.from.id];
+  if (session && (session.step === 'ADD_PROD_CAT' || session.step === 'CONFIRM_CAT')) return;
+
+  // የሱቅ ማውጫ ላይ ከሆንክ ወደዚህ እንዳይገባ መከላከል
+  // ይህ ካልተደረገ የጋራ ቃላቶች ሲጫኑ እርስ በእርስ ይጋጫሉ
+  if (ctx.message.reply_to_message || session) return;
+
   try {
-    const { data: items, error } = await supabase.from('customer_products').select('*').eq('category', category);
+    const { data: items, error } = await supabase.from('customer_products').select('*').eq('category', clickedText);
     if (error || !items || items.length === 0) {
-      return ctx.reply(`በዚህ ምድብ (${category}) ውስጥ በአሁኑ ሰዓት በደንበኛ የተጫነ ዕቃ የለም።`, customerCatKeyboard);
+      return ctx.reply(`በዚህ ምድብ (${clickedText}) ውስጥ በአሁኑ ሰዓት በደንበኛ የተጫነ ዕቃ የለም።`, customerCatKeyboard);
     }
     for (let item of items) {
       const txt = `📦 *${item.name}*\n💰 ዋጋ: ${item.price} ብር\nℹ️ መግለጫ: ${item.description || 'የለውም'}\n🏢 ድርጅት/አድራሻ: ${item.shop_name_address || 'የለውም'}\n📞 ስልክ: ${item.phone || 'የለውም'}`;
@@ -93,17 +101,57 @@ bot.hears(customerCategories, async (ctx) => {
 });
 
 // --- 🛍 አዳዲስ ዕቃዎች ክፍል ---
-bot.hears('🛍 አዳዲስ ዕቃዎችን ይግዙ', (ctx) => {
+bot.hears('🛍 አዳዲስ ዕቃዎች', (ctx) => {
   return ctx.reply('🛍 የሱቆች መጋዘን\n\nለመግዛት የሚፈልጉትን የዕቃ ምድብ ከታች ይምረጡ፦', shopKeyboard);
 });
 
-const shopCategories = ['👗 የሴቶች ልብስ', '👔 የወንዶች ልብስ', '👟 ጫማዎች', '📱 ኤሌክትሮኒክስ', '🛋 የቤት ውስጥ ዕቃዎች'];
-bot.hears(shopCategories, async (ctx) => {
+// 👟 ጫማዎች እና 📱 ኤሌክትሮኒክስ ከሱቅ ማውጫ ሲመረጡ ቀጥታ ወደ ሱቅ መጋዘን እንዲሄዱ መለየት
+bot.hears('👟 ጫማዎች', async (ctx) => {
+  try {
+    const { data: dbProducts, error } = await supabase.from('products').select('*').eq('category', '👟 ጫማዎች');
+    if (error || !dbProducts || dbProducts.length === 0) {
+      return ctx.reply(`በዚህ ምድብ (ጫማዎች) ውስጥ በአሁኑ ሰዓት ዕቃ አልተመዘገበም።`, shopKeyboard);
+    }
+    for (let item of dbProducts) {
+      const txt = `🛍 *${item.name}*\n💰 ዋጋ: ${item.price} ብር\nℹ️ መግለጫ: ${item.description || 'የለውም'}`;
+      const inlineBtn = Markup.inlineKeyboard([[Markup.button.callback('🛒 አሁን እዘዝ (Order)', `order_item_${item.id}`)]]);
+      if (item.image_url && item.image_url.trim() !== '') {
+        try { await ctx.replyWithPhoto(item.image_url, { caption: txt, parse_mode: 'Markdown', ...inlineBtn }); } 
+        catch { await ctx.reply(txt, inlineBtn); }
+      } else { await ctx.reply(txt, inlineBtn); }
+    }
+  } catch (e) { await ctx.reply('ችግር አጋጥሟል፤ ቆይተው ይሞክሩ።', shopKeyboard); }
+});
+
+bot.hears('📱 ኤሌክትሮኒክስ', async (ctx) => {
+  // ተጠቃሚው እቃ እየመዘገበ ካልሆነ በስተቀር የሱቁን መጋዘን ያሳያል
+  const session = userSessions[ctx.from.id];
+  if (session && (session.step === 'ADD_PROD_CAT' || session.step === 'CONFIRM_CAT')) return;
+
+  try {
+    const { data: dbProducts, error } = await supabase.from('products').select('*').eq('category', '📱 ኤሌክትሮኒክስ');
+    if (error || !dbProducts || dbProducts.length === 0) {
+      return ctx.reply(`በዚህ ምድብ (ኤሌክትሮኒክስ) ውስጥ በአሁኑ ሰዓት ዕቃ አልተመዘገበም።`, shopKeyboard);
+    }
+    for (let item of dbProducts) {
+      const txt = `🛍 *${item.name}*\n💰 ዋጋ: ${item.price} ብር\nℹ️ መግለጫ: ${item.description || 'የለውም'}`;
+      const inlineBtn = Markup.inlineKeyboard([[Markup.button.callback('🛒 አሁን እዘዝ (Order)', `order_item_${item.id}`)]]);
+      if (item.image_url && item.image_url.trim() !== '') {
+        try { await ctx.replyWithPhoto(item.image_url, { caption: txt, parse_mode: 'Markdown', ...inlineBtn }); } 
+        catch { await ctx.reply(txt, inlineBtn); }
+      } else { await ctx.reply(txt, inlineBtn); }
+    }
+  } catch (e) { await ctx.reply('ችግር አጋጥሟል፤ ቆይተው ይሞክሩ።', shopKeyboard); }
+});
+
+// የተቀሩት የሱቅ ካታጎሪዎች
+const otherShopCategories = ['👗 የሴቶች ልብስ', '👔 የወንዶች ልብስ', '🛋 የቤት ዕቃዎች'];
+bot.hears(otherShopCategories, async (ctx) => {
   const category = ctx.message.text.trim();
   try {
     const { data: dbProducts, error } = await supabase.from('products').select('*').eq('category', category);
     if (error || !dbProducts || dbProducts.length === 0) {
-      return ctx.reply(`በዚህ ምድብ (${category}) ውስጥ በአሁኑ ሰዓት ዕቃ አልተመዘገበም። እባክዎ ቆይተው ይሞክሩ።`, shopKeyboard);
+      return ctx.reply(`በዚህ ምድብ (${category}) ውስጥ በአሁኑ ሰዓት ዕቃ አልተመዘገበም።`, shopKeyboard);
     }
     for (let item of dbProducts) {
       const txt = `🛍 *${item.name}*\n💰 ዋጋ: ${item.price} ብር\nℹ️ መግለጫ: ${item.description || 'የለውም'}`;
@@ -117,17 +165,17 @@ bot.hears(shopCategories, async (ctx) => {
 });
 
 // --- ➕ አዳዲስ ምርቶችን በደንበኛ ለመጨመር ---
-bot.hears('➕ አዳዲስ ምርቶችን ይጨምሩ', (ctx) => {
+bot.hears('➕ አዲስ ዕቃ ጨምር', (ctx) => {
   userSessions[ctx.from.id] = { step: 'ADD_PROD_NAME' };
   return ctx.reply('📝 እሺ፣ ለመጨመር የሚፈልጉትን አዲስ *የምርት ስም* ይጻፉልኝ፦');
 });
 
 // --- 🏠 የሚከራይ ቤትና ዶርም ክፍል ---
-bot.hears('🏠 የሚከራይ ቤትና ዶርም ፈልግ', (ctx) => {
+bot.hears('🏠 የቤት ኪራይ/ዶርም', (ctx) => {
   return ctx.reply('🏠 የቤት እና የዶርም ኪራይ ማዕከል\n\nየሚፈልጉትን የቤት አይነት ከታች ይምረጡ፦', houseKeyboard);
 });
 
-const houseCategories = ['🛏 የተማሪዎች ዶርም', '🏢 ስቱዲዮ አፓርትመንት', '🏡 ቪላ / ሰርቪስ ቤት'];
+const houseCategories = ['🛏 ተማሪዎች ዶርም', '🏢 አፓርትመንት', '🏡 ቪላ / ሰርቪስ'];
 bot.hears(houseCategories, async (ctx) => {
   const category = ctx.message.text.trim();
   try {
@@ -146,17 +194,17 @@ bot.hears(houseCategories, async (ctx) => {
   } catch (err) { await ctx.reply('ይቅርታ፣ የቤት መረጃዎችን መሳብ አልተቻለም።', houseKeyboard); }
 });
 
-bot.hears('📌 ጥቆማ (የሚሸጥ መሬት/ቤት)', (ctx) => {
+bot.hears('📌 የቤት/መሬት ጥቆማ', (ctx) => {
   userSessions[ctx.from.id] = { step: 'TIP_NAME' };
   return ctx.reply('📝 እሺ የጥቆማ ቅጽ መሙያ። በመጀመሪያ *የጠቋሚውን ሙሉ ስም* ያስገቡ፦');
 });
 
 // --- 🔄 ያገለገሉ ዕቃዎች ክፍል ---
-bot.hears('🔄 ያገለገሉ ዕቃዎችን ይግዙ/ይሽጡ', (ctx) => {
+bot.hears('🔄 ያገለገሉ ዕቃዎች', (ctx) => {
   return ctx.reply('🔄 ያገለገሉ ዕቃዎች ማዕከል\n\nእቃ መግዛት ይፈልጋሉ ወይስ የራስዎን እቃ መሸጥ?', usedKeyboard);
 });
 
-bot.hears('📥 ዕቃዎች ለመመልከት', async (ctx) => {
+bot.hears('📥 ዕቃዎች እይ', async (ctx) => {
   try {
     const { data: dbUsed, error } = await supabase.from('used_items').select('*');
     if (error || !dbUsed || dbUsed.length === 0) {
@@ -173,7 +221,7 @@ bot.hears('📥 ዕቃዎች ለመመልከት', async (ctx) => {
   } catch (err) { await ctx.reply('መረጃውን ማግኘት አልተቻለም።', usedKeyboard); }
 });
 
-bot.hears('📤 የራሴን ዕቃ ለመሸጥ', (ctx) => {
+bot.hears('📤 ዕቃህን ሽጥ', (ctx) => {
   userSessions[ctx.from.id] = { step: 'ASK_SELL_NAME' };
   return ctx.reply('📝 እሺ፣ ለመሸጥ የሚፈልጉትን ያገለገለ *ዕቃ ስም* ይጻፉልኝ፦');
 });
@@ -260,6 +308,11 @@ bot.on('text', async (ctx, next) => {
     session.step = 'TIP_AREA';
     return ctx.reply('📐 የመሬቱ ወይም የቤቱ *ያረፈበት ካሬ* ያስገቡ፦');
   }
+  if (session.step === 'TIP_ADDRESS') {
+    session.tipAddress = text;
+    session.step = 'TIP_AREA';
+    return ctx.reply('📐 የመሬቱ ወይም የቤቱ *ያረፈበት ካሬ* ያስገቡ፦');
+  }
   if (session.step === 'TIP_AREA') {
     session.tipArea = text;
     session.step = 'TIP_PRICE';
@@ -297,7 +350,7 @@ bot.on('text', async (ctx, next) => {
   
   // ካታጎሪ ሲመርጥ (ማረጋገጫ እና መቀየሪያ ማሳያ)
   if (session.step === 'ADD_PROD_CAT') {
-    const validCats = ['👗 አልባሳትና ጫማዎች', '🛋 የቤት ውስጥ ዕቃዎች', '📱 ኤሌክትሮኒክስ', '🏡 መሬት/ቤት', '🔄 ያገለገሉ ማንኛውም አይነት ዕቃ'];
+    const validCats = ['👗 አልባሳትና ጫማ', '🛋 የቤት ዕቃዎች', '📱 ኤሌክትሮኒክስ', '🏡 መሬት/ቤት', '🔄 ያገለገሉ ዕቃዎች'];
     if (!validCats.includes(text)) {
       return ctx.reply('⚠️ እባክዎ ከታች ካሉት የምርጫ ቁልፎች አንዱን ብቻ ይጫኑ፦', selectCatKeyboard);
     }
