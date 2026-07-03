@@ -16,14 +16,14 @@ const PORT = process.env.PORT || 10000;
 app.get('/', (req, res) => res.send('Siralink Bot is Live!'));
 app.listen(PORT, '0.0.0.0', () => console.log(`Web Server running on port ${PORT}`));
 
-// --- STEP 1: ዋናው ማውጫ ገፅ ---
+// --- STEP 1: ዋናው ማውጫ ገፅ (የነበሩት በቅርጻቸው፣ አዲሱ ያለ ኢሞጂ) ---
 const mainKeyboard = Markup.keyboard([
   ['አዳድስ እቃዎች', 'የቤት ኪራይ/ዶርም'],
   ['ያገለገሉ ዕቃዎችን ይግዙ/ይሽጡ', 'በደንበኞች የተጨመሩ'],
   ['ስለ እኛ']
 ]).resize();
 
-// --- STEP 2: አዳድስ ዕቃዎች ማውጫ ---
+// --- STEP 2: አዳድስ ዕቃዎች ማውጫ (የነበሩት በቅርጻቸው፣ አዲሶቹ ያለ ኢሞጂ) ---
 const shopKeyboard = Markup.keyboard([
   ['የሴቶች ልብስ', 'የወንዶች ልብስ'],
   ['ጫማዎች', 'ኤሌክትሮንክስ'],
@@ -31,7 +31,7 @@ const shopKeyboard = Markup.keyboard([
   ['🔙 ወደ ዋናው ማውጫ']
 ]).resize();
 
-// --- STEP 3: የቤት ኪራይና ዶርም ማውጫ ---
+// --- STEP 3: የቤት ኪራይና ዶርም ማውጫ (የነበሩት በቅርጻቸው፣ አዲሱ ያለ ኢሞጂ) ---
 const houseKeyboard = Markup.keyboard([
   ['የተማሪዎች ዶርም', 'አፓርትመንት'],
   ['ቪላ', 'ሰርቪስ'],
@@ -44,18 +44,18 @@ const usedKeyboard = Markup.keyboard([
   ['🔙 ወደ ዋናው ማውጫ']
 ]).resize();
 
-// --- STEP 5: በደንበኞች የተጨመሩ ማውጫ (ራሳቸውን የቻሉ) ---
+// --- STEP 5: በደንበኞች የተጨመሩ ማውጫ (ከቀደሙት ጋር እንዳይደባለቁ ያለ ኢሞጂ) ---
 const customerCatKeyboard = Markup.keyboard([
-  ['አልባሳትና ጫማ', 'የቤት ዕቃዎች'],
-  ['ኤሌክትሮኒክስ', 'መሬት/ቤት'],
-  ['ያገለገሉ ዕቃዎች', '🔙 ወደ ዋናው ማውጫ']
+  ['አልባሳትና ጫማ', 'የቤት ዕቃዎች ምድብ'],
+  ['ኤሌክትሮኒክስ ምድብ', 'መሬት/ቤት'],
+  ['ያገለገሉ ዕቃዎች ምድብ', '🔙 ወደ ዋናው ማውጫ']
 ]).resize();
 
-// ደንበኞች አዲስ ምርት ሲጨምሩ የሚቀርብላቸው የምርጫ ኪቦርድ
+// ደንበኞች አዲስ ምርት ሲጨምሩ የሚመርጡት ኪቦርድ (ከላይ ካለው ጋር አንድ አይነት)
 const selectCatKeyboard = Markup.keyboard([
-  ['አልባሳትና ጫማ', 'የቤት ዕቃዎች'],
-  ['ኤሌክትሮኒክስ', 'መሬት/ቤት'],
-  ['ያገለገሉ ዕቃዎች']
+  ['አልባሳትና ጫማ', 'የቤት ዕቃዎች ምድብ'],
+  ['ኤሌክትሮኒክስ ምድብ', 'መሬት/ቤት'],
+  ['ያገለገሉ ዕቃዎች ምድብ']
 ]).resize();
 
 bot.telegram.setMyDescription("እንኳን ወደ Siralink የገበያ መድረክ በሰላም መጡ! 👋\n\nይህ ቦት አዳዲስና ያገለገሉ ዕቃዎችን ለመግዛትና ለመሸጥ፣ የሚከራዩ ቤቶችንና ዶርሞችን በቀላሉ ለማግኘት እንዲሁም የሚሸጡ መሬትና ቤቶችን ለመጠቆም የሚረዳ ሁለገብ የገበያ መገናኛ ቦት ነው።\n\nለመጀመር ከታች ያለውን START የሚለውን ይጫኑ! 👇").catch(console.error);
@@ -74,13 +74,13 @@ bot.hears('🔙 ወደ ዋናው ማውጫ', (ctx) => {
 });
 
 // ==========================================
-// STEP 1 & 5: በደንበኞች የተጨመሩ ክፍል
+// STEP 1 & 5: በደንበኞች የተጨመሩ ክፍል (የተስተካከለ)
 // ==========================================
 bot.hears('በደንበኞች የተጨመሩ', (ctx) => {
   return ctx.reply('👥 በደንበኞች የተመዘገቡ የገበያ ምርቶች ማውጫ\n\nለመመልከት የሚፈልጉትን ምድብ ይምረጡ፦', customerCatKeyboard);
 });
 
-const customerCategories = ['አልባሳትና ጫማ', 'የቤት ዕቃዎች', 'ኤሌክትሮኒክስ', 'መሬት/ቤት', 'ያገለገሉ ዕቃዎች'];
+const customerCategories = ['አልባሳትና ጫማ', 'የቤት ዕቃዎች ምድብ', 'ኤሌክትሮኒክስ ምድብ', 'መሬት/ቤት', 'ያገለገሉ ዕቃዎች ምድብ'];
 bot.hears(customerCategories, async (ctx, next) => {
   const session = userSessions[ctx.from.id];
   if (session && (session.step === 'ADD_PROD_CAT' || session.step === 'CONFIRM_CAT')) {
@@ -88,8 +88,14 @@ bot.hears(customerCategories, async (ctx, next) => {
   }
 
   const clickedText = ctx.message.text.trim();
+  // Supabase ላይ ግጭት እንዳይፈጥር ወደ መጀመሪያው የፊደል አጻጻፍ ማስተካከያ
+  let dbCategory = clickedText;
+  if (clickedText === 'የቤት ዕቃዎች ምድብ') dbCategory = 'የቤት ዕቃዎች';
+  if (clickedText === 'ኤሌክትሮኒክስ ምድብ') dbCategory = 'ኤሌክትሮኒክስ';
+  if (clickedText === 'ያገለገሉ ዕቃዎች ምድብ') dbCategory = 'ያገለገሉ ዕቃዎች';
+
   try {
-    const { data: items, error } = await supabase.from('customer_products').select('*').eq('category', clickedText);
+    const { data: items, error } = await supabase.from('customer_products').select('*').eq('category', dbCategory);
     if (error || !items || items.length === 0) {
       return ctx.reply(`በዚህ ምድብ (${clickedText}) ውስጥ በአሁኑ ሰዓት በደንበኛ የተጫነ ዕቃ የለም።`, customerCatKeyboard);
     }
@@ -203,8 +209,11 @@ bot.hears('የእርስዎን ጨምር', (ctx) => {
   return ctx.reply('📝 እሺ፣ ለመሸጥ የሚፈልጉትን ያገለገለ *ዕቃ ስም* ይጻፉልኝ፦');
 });
 
+// ==========================================
+// ℹ️ ስለ እኛ ክፍል (የተስተካከለ)
+// ==========================================
 bot.hears('ስለ እኛ', (ctx) => {
-  const aboutText = `✨ *Siralink Market ሁለገብ ማዕከል*\n\n❓ አገልግሎቶቻችንን ለማየት ከታች ይምረጡ፦`;
+  const aboutText = `✨ *Siralink Market ሁለገብ ማዕከል*\n\n❓ አገልግሎቶቻችንን ለማየት ወይም ያግኙን ለማለት ከታች ይምረጡ፦`;
   const aboutInlineKeyboard = Markup.inlineKeyboard([
     [Markup.button.callback('💼 የምንሰጣቸው አገልግሎት', 'about_services')],
     [Markup.button.callback('🏢 የደንበኞች ማእከል', 'about_customer_center')]
@@ -219,7 +228,6 @@ bot.on(['text', 'photo'], async (ctx, next) => {
   const session = userSessions[ctx.from.id];
   if (!session) return next();
 
-  // ፎቶ ከተላከ የፋይል መለያውን መያዝ
   let photoId = null;
   if (ctx.message.photo) {
     photoId = ctx.message.photo[ctx.message.photo.length - 1].file_id;
@@ -309,7 +317,7 @@ bot.on(['text', 'photo'], async (ctx, next) => {
     return;
   }
 
-  // --- STEP 5: ➕ አዲስ ምርት መመዝገቢያ ፎርም (በደንበኞች የሚሞላ) ---
+  // --- STEP 5: ➕ አዲስ ምርት መመዝገቢያ ፎርም ---
   if (session.step === 'ADD_PROD_NAME') {
     session.addProdName = text;
     session.step = 'ADD_PROD_PRICE';
@@ -349,18 +357,25 @@ bot.on(['text', 'photo'], async (ctx, next) => {
   if (session.step === 'ADD_PROD_PHONE') {
     session.addProdPhone = text;
     const username = ctx.from.username ? `@${ctx.from.username}` : 'የለውም';
-    const prodAlert = `➕ *በደንበኛ አዲስ ምርት ተመዝግቧል!* ➕\n\n📦 *የምርት ስም:* ${session.addProdName}\n💰 *ዋጋ:* ${session.addProdPrice} ብር\n🗂 *ካታጎሪ:* ${session.tempCat}\nℹ️ *መግለጫ:* ${session.addProdDesc}\n🏢 *ድርጅት/አድራሻ:* ${session.addProdAddress}\n📞 *ስልክ ቁጥር:* ${session.addProdPhone}\n👤 *አስመዝጋቢ:* ${ctx.from.first_name} (${username})`;
+    
+    // Supabase ላይ ከነባሮቹ ጋር ግጭት እንዳይፈጠር ስሙን ማስተካከል
+    let dbCatName = session.tempCat;
+    if (session.tempCat === 'የቤት ዕቃዎች ምድብ') dbCatName = 'የቤት ዕቃዎች';
+    if (session.tempCat === 'ኤሌክትሮኒክስ ምድብ') dbCatName = 'ኤሌክትሮኒክስ';
+    if (session.tempCat === 'ያገለገሉ ዕቃዎች ምድብ') dbCatName = 'ያገለገሉ ዕቃዎች';
+
+    const prodAlert = `➕ *በደንበኛ አዲስ ምርት ተመዝግቧል!* ➕\n\n📦 *የምርት ስም:* ${session.addProdName}\n💰 *ዋጋ:* ${session.addProdPrice} ብር\n🗂 *ካታጎሪ:* ${dbCatName}\nℹ️ *መግለጫ:* ${session.addProdDesc}\n🏢 *ድርጅት/አድራሻ:* ${session.addProdAddress}\n📞 *ስልክ ቁጥር:* ${session.addProdPhone}\n👤 *አስመዝጋቢ:* ${ctx.from.first_name} (${username})`;
     
     try {
       await supabase.from('customer_products').insert([
         { 
           name: session.addProdName, 
           price: session.addProdPrice, 
-          category: session.tempCat, 
+          category: dbCatName, 
           description: session.addProdDesc, 
           shop_name_address: session.addProdAddress, 
           phone: session.addProdPhone,
-          image_url: session.addProdPhoto // ፎቶ ካለው የቴሌግራም file_id ይቀመጣል
+          image_url: session.addProdPhoto
         }
       ]);
       await bot.telegram.sendMessage(ADMIN_CHAT_ID, prodAlert, { parse_mode: 'Markdown' });
@@ -410,14 +425,35 @@ bot.command('broadcast', async (ctx) => {
   } catch (err) { ctx.reply('❌ ማስተላለፍ ላይ ስህተት አለ።'); }
 });
 
+// --- የምንሰጣቸው አገልግሎቶች መግለጫ (የተስተካከለ - አጠቃላይ ስራውን የሚገልጽ ረዘም ያለ) ---
 bot.action('about_services', async (ctx) => {
   await ctx.answerCbQuery();
-  return ctx.reply(`ይህ ቦት ደንበኞችን እና ነጋዴዎችን በቀጥታ የሚያገናኝ ዘመናዊ የገበያ መድረክ ነው። በዚህ ቦት አማካኝነት አዳዲስና ያገለገሉ እቃዎችን መግዛትና መሸጥ፣ የሚከራዩ ቤቶችን እና ዶርሞችን በቀላሉ መፈለግ እንዲሁም የተለያዩ የንግድ ትስስሮችን መፍጠር ይችላሉ።`);
+  const servicesText = `💼 *የ Siralink Market ዋና የሥራ መግለጫና አገልግሎቶች* 💼\n\n` +
+                       `Siralink Bot ነጋዴዎችን፣ ሸማቾችን፣ ተከራዮችን እና አከራዮችን ያለምንም ደላላ በአንድ ማዕከል የሚያገናኝ ሁለገብና ዘመናዊ የዲጂታል ገበያ መድረክ ነው።\n\n` +
+                       `*ዋና ዋና አገልግሎቶቻችን፦*\n` +
+                       `፩. *የሱቅ ምርቶች (አዳዲስ ዕቃዎች)፦* ታዋቂ ሱቆችና ድርጅቶች አዳዲስ አልባሳትን፣ ጫማዎችን፣ ኤሌክትሮኒክስና የቤት ቁሳቁሶችን ለገበያ የሚያቀርቡበት ምድብ ነው።\n\n` +
+                       `፪. *የቤትና ዶርም ኪራይ ማዕከል፦* ተማሪዎች ለትምህርት ምቹ የሆኑ ዶርሞችን፣ ግለሰቦች ደግሞ አፓርትመንት፣ ቪላ እና ሰርቪስ ቤቶችን በቀላሉ የሚከራዩበትና የሚፈልጉበት ክፍል ነው።\n\n` +
+                       `፫. *ያገለገሉ ዕቃዎች ሽያጭ፦* ማንኛውም ተጠቃሚ የራሱን ያገለገሉ ዕቃዎች ዋጋና ስልክ በመጥቀስ በቀጥታ ለገዢዎች ማቅረብና መሸጥ ይችላል።\n\n` +
+                       `፬. *የቤት/መሬት ሽያጭ ጥቆማ፦* የሚሸጡ መሬቶችንና ቤቶችን አድራሻና ስፋት በመሙላት ፈጣን የንግድ ትስስር የሚፈጥርበት ዘመናዊ አማራጭ ነው።\n\n` +
+                       `፭. *የደንበኞች ካታጎሪ፦* ደንበኞች የራሳቸውን አዳዲስ ምርቶች በፎቶ ወይም በጽሑፍ በየምድቡ በመመዝገብ ለሺዎች የሚደርሱበት ነፃ የገበያ መድረክ ነው።`;
+  return ctx.reply(servicesText, { parse_mode: 'Markdown' });
 });
 
+// --- የደንበኞች ማዕከል (የተስተካከለ - የቴሌግራም ሊንኮች የተመለሱበት) ---
 bot.action('about_customer_center', async (ctx) => {
   await ctx.answerCbQuery();
-  return ctx.reply(`🏢 የደንበኞች ማዕከል መረጃ\n\n📍 አድራሻ፦ ሀዋሳ፤ ኢትዮጵያ\n📞 ስልክ፦ 0946662487`);
+  const customerCenterText = `🏢 *የደንበኞች ማዕከል መረጃ* 🏢\n\n` +
+                             `📍 *አድራሻ፦* ሀዋሳ፤ ኢትዮጵያ\n` +
+                             `📞 *ስልክ፦* 0946662487\n\n` +
+                             `🌐 *ይፋዊ የቴሌግራም ገጾቻችን፦*\n` +
+                             `────────────────────\n` +
+                             `📣 ቻናል: @SiralnikMarket\n` +
+                             `────────────────────\n` +
+                             `👤 ማናጀር 1: @ad_is17\n` +
+                             `────────────────────\n` +
+                             `👤 ማናጀር 2: @ad_is1\n` +
+                             `────────────────────`;
+  return ctx.reply(customerCenterText);
 });
 
 bot.action(/^order_item_(.+)$/, async (ctx) => {
