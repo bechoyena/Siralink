@@ -11,11 +11,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const userSessions = {};
 
-const app = report => express();
+const app = express();
 const PORT = process.env.PORT || 10000;
-const server = express();
-server.get('/', (req, res) => res.send('Siralink Bot is Live!'));
-server.listen(PORT, '0.0.0.0', () => console.log(`Web Server running on port ${PORT}`));
+app.get('/', (req, res) => res.send('Siralink Bot is Live!'));
+app.listen(PORT, '0.0.0.0', () => console.log(`Web Server running on port ${PORT}`));
 
 // 🖼 ምርቱን አይቶ ተዛማች ፎቶ በራሱ የሚመርጥ ፈንክሽን
 function generateMatchedImage(productName, categoryName) {
@@ -80,7 +79,7 @@ const houseKeyboard = Markup.keyboard([
   ['📌 የቤት/የመሬት ጥቆማ', '🔙 ወደ ዋናው ማውጫ']
 ]).resize();
 
-// --- ያገለገሉ ዕቃዎችን ይግዙ ይሽጡ ማውጫ (እንዳለ ይቀጥላል) ---
+// --- ያገለገሉ ዕቃዎችን ይግዙ ይሽጡ ማውጫ ---
 const usedKeyboard = Markup.keyboard([
   ['📦 ዕቃዎችን እይ', '➕ የእርስዎን ጨምር'],
   ['🔙 ወደ ዋናው ማውጫ']
@@ -100,7 +99,6 @@ const selectCatKeyboard = Markup.keyboard([
   ['⚙️ ያገለገሉ ዕቃዎች ምድብ']
 ]).resize();
 
-
 bot.start(async (ctx) => {
   if(userSessions[ctx.from.id]) delete userSessions[ctx.from.id];
   try {
@@ -115,7 +113,7 @@ bot.hears('🔙 ወደ ዋናው ማውጫ', (ctx) => {
 });
 
 // ==========================================
-// 👥 በደንበኞች የተጨመሩ ክፍል (እዚህ ውስጥ ነው ሁሉም የሚታየው)
+// 👥 በደንበኞች የተጨመሩ ክፍል
 // ==========================================
 bot.hears('👥 በደንበኞች የተጨመሩ', (ctx) => {
   return ctx.reply('👥 በደንበኞች የተመዘገቡ የገበያ ምርቶች ማውጫ\n\nለመመልከት የሚፈልጉትን ምድብ ይምረጡ፦', customerCatKeyboard);
@@ -124,6 +122,7 @@ bot.hears('👥 በደንበኞች የተጨመሩ', (ctx) => {
 const customerCategories = ['👔 አልባሳትና ጫማ', '🛋 የቤት ዕቃዎች ምድብ', '💻 ኤሌክትሮኒክስ ምድብ', '🗺 መሬት/ቤት', '⚙️ ያገለገሉ ዕቃዎች ምድብ'];
 bot.hears(customerCategories, async (ctx, next) => {
   const session = userSessions[ctx.from.id];
+  // አዲስ ዕቃ ለመጨመር ሂደት ላይ ከሆኑ ወደ ቀጣዩ ሎጂክ ማለፊያ
   if (session && (session.step === 'ADD_PROD_CAT' || session.step === 'CONFIRM_CAT')) {
     return next();
   }
@@ -131,6 +130,7 @@ bot.hears(customerCategories, async (ctx, next) => {
   const clickedText = ctx.message.text.trim();
 
   try {
+    // 🔄 እዚህ ጋር ፍለጋው ቀጥታ ከጽሑፉ ጋር እኩል በሆነው ስም ይፈልጋል (ሁሉም ነገር ወዲያውኑ እንዲመጣ)
     const { data: items, error } = await supabase.from('customer_products').select('*').eq('category', clickedText);
     if (error || !items || items.length === 0) {
       return ctx.reply(`በዚህ ምድብ (${clickedText}) ውስጥ በአሁኑ ሰዓት የተጫነ ዕቃ/ጥቆማ የለም።`, customerCatKeyboard);
@@ -221,14 +221,13 @@ bot.hears(houseCategories, async (ctx) => {
   } catch (err) { await ctx.reply('ይቅርታ፣ የቤት መረጃዎችን መሳብ አልተቻለም።', houseKeyboard); }
 });
 
-// 📌 የቤትና የመሬት ጥቆማ መጀመሪያ ገፅ
 bot.hears('📌 የቤት/የመሬት ጥቆማ', (ctx) => {
   userSessions[ctx.from.id] = { step: 'TIP_NAME' };
   return ctx.reply('📝 እሺ የጥቆማ ቅጽ መሙያ። በመጀመሪያ *የጠቋሚውን ሙሉ ስም* ያስገቡ፦');
 });
 
 // ==========================================
-// 🔄 ያገለገሉ ዕቃዎችን ይግዙ/ይሽጡ ክፍል (ሳይነካ እንደነበረ ይቀጥላል)
+// 🔄 ያገለገሉ ዕቃዎችን ይግዙ/ይሽጡ ክፍል
 // ==========================================
 bot.hears('🔄 ያገለገሉ ዕቃዎችን ይግዙ/ይሽጡ', (ctx) => {
   return ctx.reply('🔄 ያገለገሉ ዕቃዎች ማዕከል\n\nእቃ መግዛት ይፈልጋሉ ወይስ የራስዎን እቃ መሸጥ?', usedKeyboard);
@@ -330,7 +329,7 @@ bot.on(['text', 'photo'], async (ctx, next) => {
     return;
   }
 
-  // --- 📌 የቤት/መሬት ጥቆማ መቀበያ ፎርም (የተስተካከለ - ወደ '👥 በደንበኞች የተጨመሩ' -> '🗺 መሬት/ቤት' የሚገባ) ---
+  // --- 📌 የቤት/መሬት ጥቆማ መቀበያ ፎርም ---
   if (session.step === 'TIP_NAME') {
     session.tipName = text;
     session.step = 'TIP_PHONE';
@@ -355,15 +354,15 @@ bot.on(['text', 'photo'], async (ctx, next) => {
     session.tipPrice = text;
     const username = ctx.from.username ? `@${ctx.from.username}` : 'የለውም';
     
-    // ለቤት/መሬት የሚሆን አውቶማቲክ ማራኪ ምስል መምረጥ
-    const defaultImg = generateMatchedImage(session.tipAddress, '🗺 መሬት/ቤት');
+    // 🔄 "ካሬ ካሬ" የሚለውን ድግግሞሽ ለማስቀረት የተስተካከለ ስም
     const pName = `የሚሸጥ/የሚከራይ መሬት/ቤት (${session.tipArea} ካሬ)`;
     const pDesc = `የጠቋሚ ስም: ${session.tipName} | ስፋት: ${session.tipArea} m²`;
+    const defaultImg = generateMatchedImage(session.tipAddress, '🗺 መሬት/ቤት');
 
     const tipAlert = `📌 *አዲስ የቤት/መሬት ሽያጭ ጥቆማ በደንበኛ ገብቷል!* 📌\n\n👤 *የጠቋሚ ስም:* ${session.tipName}\n📞 *ስልክ ቁጥር:* ${session.tipPhone}\n📍 *ቦታ/አድራሻ:* ${session.tipAddress}\n📐 *ስፋት:* ${session.tipArea} m²\n💰 *ዋጋ:* ${session.tipPrice} ብር\n📱 *ቴሌግራም:* ${username}`;
     
     try {
-      // 🔄 መረጃው በቀጥታ '👥 በደንበኞች የተጨመሩ' -> '🗺 መሬት/ቤት' ውስጥ እንዲቀመጥ ተደርጓል
+      // 🔄 ወደ ርዝራዥ ካታጎሪ ሳይሆን ቀጥታ ከነኢሞጂው "🗺 መሬት/ቤት" ውስጥ ይገባል
       await supabase.from('customer_products').insert([
         { 
           name: pName, 
@@ -378,7 +377,7 @@ bot.on(['text', 'photo'], async (ctx, next) => {
 
       await bot.telegram.sendMessage(ADMIN_CHAT_ID, `[የአስተዳዳሪ ማሳወቂያ]\n${tipAlert}`, { parse_mode: 'Markdown' });
       
-      // 📢 አውቶማቲክ ብሮድካስት - ለሁሉም ደንበኞች አዲስ የቤት/መሬት ጥቆማ መግባቱን ያበስራል
+      // 📢 አውቶማቲክ ብሮድካስት
       autoBroadcastNewProduct(pName, '🗺 መሬት/ቤት', session.tipPrice);
 
       await ctx.reply('🎉 እናመሰግናለን! የጥቆማ መረጃዎ በተሳካ ሁኔታ ተመዝግቧል። አሁን ሌሎች ደንበኞች በዋናው ገጽ "👥 በደንበኞች የተጨመሩ" -> "🗺 መሬት/ቤት" ውስጥ በቀጥታ መመልከት ይችላሉ።', mainKeyboard);
@@ -457,7 +456,7 @@ bot.on(['text', 'photo'], async (ctx, next) => {
       
       await bot.telegram.sendMessage(ADMIN_CHAT_ID, prodAlert, { parse_mode: 'Markdown' });
 
-      // 📢 አውቶማቲክ ብሮድካስት - ምርቱ ሲመዘገብ ለሁሉም ደንበኞች መልዕክት ይልካል
+      // 📢 አውቶማቲክ ብሮድካስት
       autoBroadcastNewProduct(session.addProdName, dbCatName, session.addProdPrice);
 
       await ctx.reply('🎉 ምርትዎ በተሳካ ሁኔታ ተመዝግቧል! አሁን በዋናው ገጽ "👥 በደንበኞች የተጨመሩ" ማውጫ ስር በቀጥታ ይታያል።', mainKeyboard);
@@ -505,8 +504,7 @@ bot.command('broadcast', async (ctx) => {
 // --- የምንሰጣቸው አገልግሎቶች መግለጫ ---
 bot.action('about_services', async (ctx) => {
   await ctx.answerCbQuery();
-  const servicesText = `💼 *የ Siralink Market ዋና የሥራ መግለጫና አገልግሎቶች* 💼\n\n` +
-                       `Siralink Bot ነጋዴዎችንና ሸማቾችን ያለምንም ደላላ በአንድ ማዕከል የሚያገናኝ የገበያ መድረክ ነው።`;
+  const servicesText = `💼 *የ Siralink Market ዋና የሥራ መግለጫና አገልግሎቶች* 💼\n\nSiralink Bot ነጋዴዎችንና ሸማቾችን ያለምንም ደላላ በአንድ ማዕከል የሚያገናኝ የገበያ መድረክ ነው።`;
   return ctx.reply(servicesText, { parse_mode: 'Markdown' });
 });
 
