@@ -11,14 +11,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const userSessions = {};
 
-const app = reportExpressErrors(express());
+const app = express();
 const PORT = process.env.PORT || 10000;
 app.get('/', (req, res) => res.send('Siralink Bot is Live!'));
 app.listen(PORT, '0.0.0.0', () => console.log(`Web Server running on port ${PORT}`));
-
-function reportExpressErrors(expressApp) {
-  return expressApp;
-}
 
 // 📱 ኪቦርዶች
 const mainKeyboard = Markup.keyboard([
@@ -29,12 +25,14 @@ const mainKeyboard = Markup.keyboard([
 const shopKeyboard = Markup.keyboard([
   ['👗 የሴቶች ልብስ', '👔 የወንዶች ልብስ'],
   ['👟 ጫማዎች', '📱 ኤሌክትሮኒክስ'],
+  ['🛋 የቤት ውስጥ ዕቃዎች', '➕ አዳዲስ ምርቶችን ይጨምሩ'],
   ['🔙 ወደ ዋናው ማውጫ']
 ]).resize();
 
 const houseKeyboard = Markup.keyboard([
   ['🛏 የተማሪዎች ዶርም', '🏢 ስቱዲዮ አፓርትመንት'],
-  ['🏡 ቪላ / ሰርቪስ ቤት', '🔙 ወደ ዋናው ማውጫ']
+  ['🏡 ቪላ / ሰርቪስ ቤት', '📌 ጥቆማ (የሚሸጥ መሬት/ቤት)'],
+  ['🔙 ወደ ዋናው ማውጫ']
 ]).resize();
 
 const usedKeyboard = Markup.keyboard([
@@ -42,10 +40,12 @@ const usedKeyboard = Markup.keyboard([
   ['🔙 ወደ ዋናው ማውጫ']
 ]).resize();
 
+// 2️⃣ አዲስ ሰው /start ከመጫኑ በፊት በመነሻ ገጽ ላይ የሚያነበው ጽሑፍ
+bot.telegram.setMyDescription("እንኳን ወደ Siralink የገበያ መድረክ በሰላም መጡ! 👋\n\nይህ ቦት አዳዲስና ያገለገሉ ዕቃዎችን ለመግዛትና ለመሸጥ፣ የሚከራዩ ቤቶችንና ዶርሞችን በቀላሉ ለማግኘት እንዲሁም የሚሸጡ መሬትና ቤቶችን ለመጠቆም የሚረዳ ሁለገብ የገበያ መገናኛ ቦት ነው።\n\nለመጀመር ከታች ያለውን START የሚለውን ይጫኑ! 👇").catch(console.error);
+
 bot.start(async (ctx) => {
   if(userSessions[ctx.from.id]) delete userSessions[ctx.from.id];
   try {
-    // ተጠቃሚውን መመዝገብ (ለብሮድካስት እንዲሆን)
     await supabase.from('bot_users').insert([{ chat_id: ctx.from.id }], { upsert: true });
   } catch (err) { console.error('User registration error:', err); }
   return ctx.reply('እንኳን ወደ Siralink መተግበሪያ ማውጫ በሰላም መጡ! 👋\n\nከታች ካለው ማውጫ የሚፈልጉትን አገልግሎት ይምረጡ፦', mainKeyboard);
@@ -61,7 +61,7 @@ bot.hears('🛍 አዳዲስ ዕቃዎችን ይግዙ', (ctx) => {
   return ctx.reply('🛍 የሱቆች መጋዘን\n\nለመግዛት የሚፈልጉትን የዕቃ ምድብ ከታች ይምረጡ፦', shopKeyboard);
 });
 
-const shopCategories = ['👗 የሴቶች ልብስ', '👔 የወንዶች ልብስ', '👟 ጫማዎች', '📱 ኤሌክትሮኒክስ'];
+const shopCategories = ['👗 የሴቶች ልብስ', '👔 የወንዶች ልብስ', '👟 ጫማዎች', '📱 ኤሌክትሮኒክስ', '🛋 የቤት ውስጥ ዕቃዎች'];
 bot.hears(shopCategories, async (ctx) => {
   const category = ctx.message.text.trim();
   try {
@@ -85,6 +85,12 @@ bot.hears(shopCategories, async (ctx) => {
   } catch (err) { 
     await ctx.reply('ይቅርታ፣ መረጃዎችን ከዳታቤዝ ላይ መሳብ አልተቻለም።', shopKeyboard); 
   }
+});
+
+// --- ➕ አዳዲስ ምርቶችን በደንበኛ ለመጨመር ---
+bot.hears('➕ አዳዲስ ምርቶችን ይጨምሩ', (ctx) => {
+  userSessions[ctx.from.id] = { step: 'ADD_PROD_NAME' };
+  return ctx.reply('📝 እሺ፣ ለመጨመር የሚፈልጉትን አዲስ *የምርት ስም* ይጻፉልኝ፦');
 });
 
 // --- 🏠 4.2 የሚከራይ ቤትና ዶርም ክፍል ---
@@ -111,6 +117,12 @@ bot.hears(houseCategories, async (ctx) => {
       }
     }
   } catch (err) { await ctx.reply('ይቅርታ፣ የቤት መረጃዎችን መሳብ አልተቻለም።', houseKeyboard); }
+});
+
+// --- 📌 የቤት/መሬት ጥቆማ ማስጀመሪያ ---
+bot.hears('📌 ጥቆማ (የሚሸጥ መሬት/ቤት)', (ctx) => {
+  userSessions[ctx.from.id] = { step: 'TIP_NAME' };
+  return ctx.reply('📝 እሺ የጥቆማ ቅጽ መሙያ። በመጀመሪያ *የጠቋሚውን ሙሉ ስም* ያስገቡ፦');
 });
 
 // --- 🔄 4.3 ያገለገሉ ዕቃዎች ክፍል ---
@@ -159,6 +171,7 @@ bot.on('text', async (ctx, next) => {
   if (!session) return next();
   const text = ctx.message.text.trim();
 
+  // --- 🛒 እቃ ማዘዣ ፎርም ---
   if (session.step === 'ASK_NAME') {
     session.name = text;
     session.step = 'ASK_PHONE';
@@ -174,31 +187,22 @@ bot.on('text', async (ctx, next) => {
     const prod = session.product;
     const customerUser = ctx.from.username ? `@${ctx.from.username}` : 'የለውም';
     
-    // 🔥 እዚህ ጋ ትዕዛዙ የማን እንደሆነ በትክክል ይለያል! (የምርት ስም እና የሱቅ ID ይላካል)
     const alertMessage = `🛍 *አዲስ የዕቃ ትዕዛዝ ደርሷል!* 🛍\n\n🆔 *የምርት መለያ (ID):* #${prod.id}\n📦 *ዕቃ:* ${prod.name}\n💰 *ዋጋ:* ${prod.price} ብር\n🏪 *የባለሱቅ ID:* ${prod.shop_owner_id || 'የለውም'}\n\n👤 *የደንበኛ ስም:* ${session.name}\n📞 *ስልክ ቁጥር:* ${session.phone}\n📍 *አድራሻ:* ${session.address}\n📱 *ቴሌግራም:* ${customerUser}`;
 
     try {
-      let sentToOwner = false;
-      // ለባለሱቁ መላኪያ ማረጋገጫ (ትክክለኛ ቁጥር ከሆነና ቦቱን ካስነሳው ብቻ)
       if (prod.shop_owner_id && !isNaN(prod.shop_owner_id)) {
-        try {
-          await bot.telegram.sendMessage(Number(prod.shop_owner_id), alertMessage, { parse_mode: 'Markdown' });
-          sentToOwner = true;
-        } catch (e) { console.log("ባለሱቁ ቦቱን ስላላስነሳ መልዕክት አልደረሰውም"); }
+        try { await bot.telegram.sendMessage(Number(prod.shop_owner_id), alertMessage, { parse_mode: 'Markdown' }); } catch (e) {}
       }
-      
-      // ላንተ ሁልጊዜ ኮፒ እንዲደርስህ ማድረጊያ (የደህንነት ማስተማመኛ)
       await bot.telegram.sendMessage(ADMIN_CHAT_ID, `[የትዕዛዝ መቆጣጠሪያ ኮፒ]\n${alertMessage}`, { parse_mode: 'Markdown' });
-      
       await ctx.reply('🎉 ማረጋገጫ: ትዕዛዝዎ በተሳካ ሁኔታ ተመዝግቧል! በቅርቡ እናገኝዎታለን። እናመሰግናለን! 🙏', mainKeyboard);
     } catch (err) {
-      console.error(err);
       await ctx.reply('❌ ትዕዛዙን ማስተላለፍ ላይ ችግር አጋጥሟል። እባክዎ ለባለቤቱ በውስጥ መስመር ያሳውቁ።', mainKeyboard);
     }
     delete userSessions[ctx.from.id];
     return;
   }
 
+  // --- 📤 ያገለገለ እቃ መሸጫ ፎርም ---
   if (session.step === 'ASK_SELL_NAME') {
     session.sellName = text;
     session.step = 'ASK_SELL_PRICE';
@@ -212,9 +216,7 @@ bot.on('text', async (ctx, next) => {
   if (session.step === 'ASK_SELL_PHONE') {
     session.sellPhone = text;
     const username = ctx.message.from.username ? `@${ctx.message.from.username}` : 'የለውም';
-
     try {
-      // ⚠️ በ Supabase ላይ አምዱ 'contact' ወይም 'phone' መሆኑን አይቶ ሁለቱንም ይሞክራል
       await supabase.from('used_items').insert([
         { name: session.sellName, price: session.sellPrice, contact: session.sellPhone, phone: session.sellPhone, description: `በተጠቃሚ ${username} የተላከ` }
       ]);
@@ -225,10 +227,86 @@ bot.on('text', async (ctx, next) => {
       await ctx.reply('📥 መረጃው በተለዋጭ መንገድ ተመዝግቧል። እናመሰግናለን።', mainKeyboard);
     }
     delete userSessions[ctx.from.id];
+    return;
+  }
+
+  // --- 📌 3️⃣ አዲስ የቤት/መሬት ጥቆማ መቀበያ ፎርም ---
+  if (session.step === 'TIP_NAME') {
+    session.tipName = text;
+    session.step = 'TIP_PHONE';
+    return ctx.reply('📞 በመቀጠል *የጠቋሚውን ስልክ ቁጥር* ያስገቡ፦');
+  }
+  if (session.step === 'TIP_PHONE') {
+    session.tipPhone = text;
+    session.step = 'TIP_ADDRESS';
+    return ctx.reply('📍 ቤቱ ወይም መሬቱ የሚገኝበትን *ትክክለኛ ቦታ / አድራሻ* ይጻፉ፦');
+  }
+  if (session.step === 'TIP_ADDRESS') {
+    session.tipAddress = text;
+    session.step = 'TIP_AREA';
+    return ctx.reply('📐 የመሬቱ ወይም የቤቱ *ያረፈበት ካሬ (በእስኩዌር ሜትር)* ስንት ነው? ያስገቡ፦');
+  }
+  if (session.step === 'TIP_AREA') {
+    session.tipArea = text;
+    session.step = 'TIP_PRICE';
+    return ctx.reply('💰 የመጨረሻ *የመሸጫ ዋጋ* በብር ያስገቡ፦');
+  }
+  if (session.step === 'TIP_PRICE') {
+    session.tipPrice = text;
+    const username = ctx.from.username ? `@${ctx.from.username}` : 'የለውም';
+    
+    const tipAlert = `📌 *አዲስ የቤት/መሬት ሽያጭ ጥቆማ ደርሷል!* 📌\n\n👤 *የጠቋሚ ስም:* ${session.tipName}\n📞 *ስልክ ቁጥር:* ${session.tipPhone}\n📍 *ቦታ/አድራሻ:* ${session.tipAddress}\n📐 *ስፋት (ካሬ):* ${session.tipArea} m²\n💰 *ዋጋ:* ${session.tipPrice} ብር\n📱 *ቴሌግራም:* ${username}`;
+    
+    try {
+      await supabase.from('houses').insert([
+        { name: `የሚሸጥ መሬት/ቤት (${session.tipArea} ካሬ)`, price: session.tipPrice, category: 'ጥቆማ', description: `አድራሻ: ${session.tipAddress} | ጠቋሚ: ${session.tipName} (${session.tipPhone})` }
+      ]);
+      await bot.telegram.sendMessage(ADMIN_CHAT_ID, tipAlert, { parse_mode: 'Markdown' });
+      await ctx.reply('🎉 እናመሰግናለን! የጥቆማ መረጃዎ በተሳካ ሁኔታ ተመዝግቧል።', houseKeyboard);
+    } catch (err) {
+      await ctx.reply('✅ ጥቆማዎ ለአስተዳዳሪው ተላልፏል። እናመሰግናለን!', houseKeyboard);
+    }
+    delete userSessions[ctx.from.id];
+    return;
+  }
+
+  // --- ➕ 4️⃣ አዲስ ምርት መመዝገቢያ ፎርም ---
+  if (session.step === 'ADD_PROD_NAME') {
+    session.addProdName = text;
+    session.step = 'ADD_PROD_PRICE';
+    return ctx.reply('💰 የምርቱን *የሽያጭ ዋጋ* በብር ብቻ ያስገቡ፦');
+  }
+  if (session.step === 'ADD_PROD_PRICE') {
+    session.addProdPrice = text;
+    session.step = 'ADD_PROD_DESC';
+    return ctx.reply('ℹ️ ስለ ምርቱ አጭር *መግለጫ* ይጻፉ፦');
+  }
+  if (session.step === 'ADD_PROD_DESC') {
+    session.addProdDesc = text;
+    session.step = 'ADD_PROD_OWNER';
+    return ctx.reply('🏪 በመጨረሻም የእርስዎን *የቴሌግራም ID ቁጥር* ያስገቡ (ለምሳሌ፦ 5406168929)፦');
+  }
+  if (session.step === 'ADD_PROD_OWNER') {
+    session.addProdOwner = text;
+    const username = ctx.from.username ? `@${ctx.from.username}` : 'የለውም';
+
+    const prodAlert = `➕ *አዲስ ምርት ምዝገባ ጥያቄ ደርሷል!* ➕\n\n📦 *የምርት ስም:* ${session.addProdName}\n💰 *ዋጋ:* ${session.addProdPrice} ብር\nℹ️ *መግለጫ:* ${session.addProdDesc}\n🏪 *ባለሱቅ ID:* ${session.addProdOwner}\n👤 *አስመዝጋቢ:* ${ctx.from.first_name} (${username})`;
+
+    try {
+      await supabase.from('products').insert([
+        { name: session.addProdName, price: session.addProdPrice, category: 'የቤት ውስጥ ዕቃዎች', description: session.addProdDesc, shop_owner_id: session.addProdOwner }
+      ]);
+      await bot.telegram.sendMessage(ADMIN_CHAT_ID, prodAlert, { parse_mode: 'Markdown' });
+      await ctx.reply('🎉 ምርትዎ በተሳካ ሁኔታ ተመዝግቧል! በቅርቡ በቦቱ ላይ ይፋ ይሆናል።', shopKeyboard);
+    } catch (err) {
+      await ctx.reply('❌ ምርቱን መመዝገብ አልተቻለም። እባክዎ ቆይተው ይሞክሩ።', shopKeyboard);
+    }
+    delete userSessions[ctx.from.id];
+    return;
   }
 });
 
-// --- 📢 6. አዲስ ዕቃ ሲኖር ለሁሉም ደንበኞች ማስተላለፊያ ኮማንድ (የተስተካከለ) ---
+// --- 📢 6. ብሮድካስት ኮማንድ ---
 bot.command('broadcast', async (ctx) => {
   if (ctx.from.id !== ADMIN_CHAT_ID) return;
   const categoryInput = ctx.message.text.replace('/broadcast', '').trim();
@@ -238,7 +316,7 @@ bot.command('broadcast', async (ctx) => {
   try {
     const { data: users, error } = await supabase.from('bot_users').select('chat_id');
     if (error || !users || users.length === 0) {
-      return ctx.reply('📢 መልዕክት የሚላክላቸው ተጠቃሚዎች በዳታቤዙ (bot_users) ላይ አልተገኙም።');
+      return ctx.reply('📢 መልዕክት የሚላክላቸው ተጠቃሚዎች በዳታቤዙ ላይ አልተገኙም።');
     }
     const notificationText = `🔔 *አዲስ ምርት ወጥቷል!* 🔔\n\nSiralink Market ላይ በ *${categoryInput}* ምድብ ስር አዳዲስ ምርቶች አሁን ገብተዋል። ቦቱ ላይ በመግባት አሁኑኑ ይመልከቱ! 🛍✨`;
     ctx.reply(`⏳ ለ ${users.length} ተጠቃሚዎች መልዕክት መላክ ተጀምሯል...`);
@@ -249,9 +327,10 @@ bot.command('broadcast', async (ctx) => {
   } catch (err) { ctx.reply('❌ ማስተላለፍ ላይ ስህተት አለ።'); }
 });
 
+// 1️⃣ "የምንሰጣቸው አገልግሎት" የድሮው የመጀመሪያው ማብራሪያ ተመለሰ
 bot.action('about_services', async (ctx) => {
   await ctx.answerCbQuery();
-  return ctx.reply(`ይህ ቦት ደንበኞችን እና ነጋዴዎችን በቀጥታ የሚያገናኝ ዘመናዊ የገበያ መድረክ ነው።`);
+  return ctx.reply(`ይህ ቦት ደንበኞችን እና ነጋዴዎችን በቀጥታ የሚያገናኝ ዘመናዊ የገበያ መድረክ ነው። በዚህ ቦት አማካኝነት አዳዲስና ያገለገሉ እቃዎችን መግዛትና መሸጥ፣ የሚከራዩ ቤቶችን እና ዶርሞችን በቀላሉ መፈለግ እንዲሁም የተለያዩ የንግድ ትስስሮችን መፍጠር ይችላሉ።`);
 });
 
 bot.action('about_customer_center', async (ctx) => {
