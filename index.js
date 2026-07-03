@@ -76,77 +76,22 @@ bot.hears('👥 በደንበኞች የተጨመሩ', (ctx) => {
   return ctx.reply('👥 በደንበኞች የተመዘገቡ የገበያ ምርቶች ማውጫ\n\nለመመልከት የሚፈልጉትን ምድብ ይምረጡ፦', customerCatKeyboard);
 });
 
-// ለደንበኞች የተጨመሩ ምርቶች ብቻ ምላሽ መስጫ
-const customerCategories = ['👗 አልባሳትና ጫማ', '🛋 የቤት ዕቃዎች', '📱 ኤሌክትሮኒክስ', '🏡 መሬት/ቤት', '🔄 ያገለገሉ ዕቃዎች'];
-bot.hears(customerCategories, async (ctx) => {
-  const clickedText = ctx.message.text.trim();
-  const session = userSessions[ctx.from.id];
-  if (session && (session.step === 'ADD_PROD_CAT' || session.step === 'CONFIRM_CAT')) return;
-
-  // የሱቅ ማውጫ ላይ ከሆንክ ወደዚህ እንዳይገባ መከላከል
-  // ይህ ካልተደረገ የጋራ ቃላቶች ሲጫኑ እርስ በእርስ ይጋጫሉ
-  if (ctx.message.reply_to_message || session) return;
-
-  try {
-    const { data: items, error } = await supabase.from('customer_products').select('*').eq('category', clickedText);
-    if (error || !items || items.length === 0) {
-      return ctx.reply(`በዚህ ምድብ (${clickedText}) ውስጥ በአሁኑ ሰዓት በደንበኛ የተጫነ ዕቃ የለም።`, customerCatKeyboard);
-    }
-    for (let item of items) {
-      const txt = `📦 *${item.name}*\n💰 ዋጋ: ${item.price} ብር\nℹ️ መግለጫ: ${item.description || 'የለውም'}\n🏢 ድርጅት/አድራሻ: ${item.shop_name_address || 'የለውም'}\n📞 ስልክ: ${item.phone || 'የለውም'}`;
-      const inlineBtn = Markup.inlineKeyboard([[Markup.button.callback('🛒 አሁን ይደውሉ / ይዘዙ', `order_cust_${item.id}`)]]);
-      await ctx.reply(txt, { parse_mode: 'Markdown', ...inlineBtn });
-    }
-  } catch (err) { await ctx.reply('መረጃውን ማግኘት አልተቻለም።', customerCatKeyboard); }
-});
-
 // --- 🛍 አዳዲስ ዕቃዎች ክፍል ---
 bot.hears('🛍 አዳዲስ ዕቃዎች', (ctx) => {
   return ctx.reply('🛍 የሱቆች መጋዘን\n\nለመግዛት የሚፈልጉትን የዕቃ ምድብ ከታች ይምረጡ፦', shopKeyboard);
 });
 
-// 👟 ጫማዎች እና 📱 ኤሌክትሮኒክስ ከሱቅ ማውጫ ሲመረጡ ቀጥታ ወደ ሱቅ መጋዘን እንዲሄዱ መለየት
-bot.hears('👟 ጫማዎች', async (ctx) => {
-  try {
-    const { data: dbProducts, error } = await supabase.from('products').select('*').eq('category', '👟 ጫማዎች');
-    if (error || !dbProducts || dbProducts.length === 0) {
-      return ctx.reply(`በዚህ ምድብ (ጫማዎች) ውስጥ በአሁኑ ሰዓት ዕቃ አልተመዘገበም።`, shopKeyboard);
-    }
-    for (let item of dbProducts) {
-      const txt = `🛍 *${item.name}*\n💰 ዋጋ: ${item.price} ብር\nℹ️ መግለጫ: ${item.description || 'የለውም'}`;
-      const inlineBtn = Markup.inlineKeyboard([[Markup.button.callback('🛒 አሁን እዘዝ (Order)', `order_item_${item.id}`)]]);
-      if (item.image_url && item.image_url.trim() !== '') {
-        try { await ctx.replyWithPhoto(item.image_url, { caption: txt, parse_mode: 'Markdown', ...inlineBtn }); } 
-        catch { await ctx.reply(txt, inlineBtn); }
-      } else { await ctx.reply(txt, inlineBtn); }
-    }
-  } catch (e) { await ctx.reply('ችግር አጋጥሟል፤ ቆይተው ይሞክሩ።', shopKeyboard); }
-});
-
-bot.hears('📱 ኤሌክትሮኒክስ', async (ctx) => {
-  // ተጠቃሚው እቃ እየመዘገበ ካልሆነ በስተቀር የሱቁን መጋዘን ያሳያል
+// ==========================================
+// 🔍 የሱቅ ዕቃዎች ማዳመጫ (Shop Inventory Queries)
+// ==========================================
+const shopItems = ['👗 የሴቶች ልብስ', '👔 የወንዶች ልብስ', '👟 ጫማዎች', '📱 ኤሌክትሮኒክስ', '🛋 የቤት ዕቃዎች'];
+bot.hears(shopItems, async (ctx, next) => {
   const session = userSessions[ctx.from.id];
-  if (session && (session.step === 'ADD_PROD_CAT' || session.step === 'CONFIRM_CAT')) return;
+  // ተጠቃሚው አዲስ ዕቃ እየመዘገበ ከሆነ ይህንን አልፎ ወደ text handling እንዲሄድ ያደርጋል
+  if (session && (session.step === 'ADD_PROD_CAT' || session.step === 'CONFIRM_CAT')) {
+    return next();
+  }
 
-  try {
-    const { data: dbProducts, error } = await supabase.from('products').select('*').eq('category', '📱 ኤሌክትሮኒክስ');
-    if (error || !dbProducts || dbProducts.length === 0) {
-      return ctx.reply(`በዚህ ምድብ (ኤሌክትሮኒክስ) ውስጥ በአሁኑ ሰዓት ዕቃ አልተመዘገበም።`, shopKeyboard);
-    }
-    for (let item of dbProducts) {
-      const txt = `🛍 *${item.name}*\n💰 ዋጋ: ${item.price} ብር\nℹ️ መግለጫ: ${item.description || 'የለውም'}`;
-      const inlineBtn = Markup.inlineKeyboard([[Markup.button.callback('🛒 አሁን እዘዝ (Order)', `order_item_${item.id}`)]]);
-      if (item.image_url && item.image_url.trim() !== '') {
-        try { await ctx.replyWithPhoto(item.image_url, { caption: txt, parse_mode: 'Markdown', ...inlineBtn }); } 
-        catch { await ctx.reply(txt, inlineBtn); }
-      } else { await ctx.reply(txt, inlineBtn); }
-    }
-  } catch (e) { await ctx.reply('ችግር አጋጥሟል፤ ቆይተው ይሞክሩ።', shopKeyboard); }
-});
-
-// የተቀሩት የሱቅ ካታጎሪዎች
-const otherShopCategories = ['👗 የሴቶች ልብስ', '👔 የወንዶች ልብስ', '🛋 የቤት ዕቃዎች'];
-bot.hears(otherShopCategories, async (ctx) => {
   const category = ctx.message.text.trim();
   try {
     const { data: dbProducts, error } = await supabase.from('products').select('*').eq('category', category);
@@ -162,6 +107,31 @@ bot.hears(otherShopCategories, async (ctx) => {
       } else { await ctx.reply(txt, inlineBtn); }
     }
   } catch (err) { await ctx.reply('ይቅርታ፣ መረጃዎችን ማግኘት አልተቻለም።', shopKeyboard); }
+});
+
+// ==========================================
+// 👥 በደንበኞች የተጨመሩ ዕቃዎች ማዳመጫ (Customer Inventory Queries)
+// ==========================================
+const customerCategories = ['👗 አልባሳትና ጫማ', '🛋 የቤት ዕቃዎች', '📱 ኤሌክትሮኒክስ', '🏡 መሬት/ቤት', '🔄 ያገለገሉ ዕቃዎች'];
+bot.hears(customerCategories, async (ctx, next) => {
+  const session = userSessions[ctx.from.id];
+  // ተጠቃሚው አዲስ ዕቃ እየመዘገበ ከሆነ ይህንን አልፎ ወደ text handling እንዲሄድ ያደርጋል
+  if (session && (session.step === 'ADD_PROD_CAT' || session.step === 'CONFIRM_CAT')) {
+    return next();
+  }
+
+  const clickedText = ctx.message.text.trim();
+  try {
+    const { data: items, error } = await supabase.from('customer_products').select('*').eq('category', clickedText);
+    if (error || !items || items.length === 0) {
+      return ctx.reply(`በዚህ ምድብ (${clickedText}) ውስጥ በአሁኑ ሰዓት በደንበኛ የተጫነ ዕቃ የለም።`, customerCatKeyboard);
+    }
+    for (let item of items) {
+      const txt = `📦 *${item.name}*\n💰 ዋጋ: ${item.price} ብር\nℹ️ መግለጫ: ${item.description || 'የለውም'}\n🏢 ድርጅት/አድራሻ: ${item.shop_name_address || 'የለውም'}\n📞 ስልክ: ${item.phone || 'የለውም'}`;
+      const inlineBtn = Markup.inlineKeyboard([[Markup.button.callback('🛒 አሁን ይደውሉ / ይዘዙ', `order_cust_${item.id}`)]]);
+      await ctx.reply(txt, { parse_mode: 'Markdown', ...inlineBtn });
+    }
+  } catch (err) { await ctx.reply('መረጃውን ማግኘት አልተቻለም።', customerCatKeyboard); }
 });
 
 // --- ➕ አዳዲስ ምርቶችን በደንበኛ ለመጨመር ---
@@ -302,11 +272,6 @@ bot.on('text', async (ctx, next) => {
     session.tipPhone = text;
     session.step = 'TIP_ADDRESS';
     return ctx.reply('📍 ቤቱ ወይም መሬቱ የሚገኝበትን *ትክክለኛ ቦታ / አድራሻ* ይጻፉ፦');
-  }
-  if (session.step === 'TIP_ADDRESS') {
-    session.tipAddress = text;
-    session.step = 'TIP_AREA';
-    return ctx.reply('📐 የመሬቱ ወይም የቤቱ *ያረፈበት ካሬ* ያስገቡ፦');
   }
   if (session.step === 'TIP_ADDRESS') {
     session.tipAddress = text;
