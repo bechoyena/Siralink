@@ -6,7 +6,7 @@ const bot = new Telegraf('8577893575:AAE0YpDFrK8GgYBP46uqTRsdM6zGkpec1kU');
 const ADMIN_CHAT_ID = 5406168929;
 
 const SUPABASE_URL = 'https://gyooossgagycyeyffjfr.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5b29vc3NnYWd5Y3lleWZmamZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5Mzk5ODgsImV4cCI6MjA5ODUxNTk4OH0.k85DGyIEU_wEzZhE6Qbo-ssiXbhT2gR69SH7KVOZ4NY';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIdiRefIjoia3lvb29zc2dhZ3ljeWVmZmpmciIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzgyOTM5OTg4LCJleHAiOjIwOTg1MTU5ODh9.k85DGyIEU_wEzZhE6Qbo-ssiXbhT2gR69SH7KVOZ4NY';
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const userSessions = {};
@@ -122,7 +122,6 @@ bot.hears('👥 በደንበኞች የተጨመሩ', (ctx) => {
 const customerCategories = ['👔 አልባሳትና ጫማ', '🛋 የቤት ዕቃዎች ምድብ', '💻 ኤሌክትሮኒክስ ምድብ', '🗺 መሬት/ቤት', '⚙️ ያገለገሉ ዕቃዎች ምድብ'];
 bot.hears(customerCategories, async (ctx, next) => {
   const session = userSessions[ctx.from.id];
-  // አዲስ ዕቃ ለመጨመር ሂደት ላይ ከሆኑ ወደ ቀጣዩ ሎጂክ ማለፊያ
   if (session && (session.step === 'ADD_PROD_CAT' || session.step === 'CONFIRM_CAT')) {
     return next();
   }
@@ -130,7 +129,6 @@ bot.hears(customerCategories, async (ctx, next) => {
   const clickedText = ctx.message.text.trim();
 
   try {
-    // 🔄 እዚህ ጋር ፍለጋው ቀጥታ ከጽሑፉ ጋር እኩል በሆነው ስም ይፈልጋል (ሁሉም ነገር ወዲያውኑ እንዲመጣ)
     const { data: items, error } = await supabase.from('customer_products').select('*').eq('category', clickedText);
     if (error || !items || items.length === 0) {
       return ctx.reply(`በዚህ ምድብ (${clickedText}) ውስጥ በአሁኑ ሰዓት የተጫነ ዕቃ/ጥቆማ የለም።`, customerCatKeyboard);
@@ -267,6 +265,34 @@ bot.hears('ℹ️ ስለ እኛ', (ctx) => {
   return ctx.reply(aboutText, aboutInlineKeyboard);
 });
 
+bot.action('about_services', async (ctx) => {
+  await ctx.answerCbQuery();
+  const servicesText = `💼 *የ Siralink Market ዋና የሥራ መግለጫና አገልግሎቶች* 💼\n\n` +
+    `Siralink Bot ነጋዴዎችንና ሸማቾችን ያለምንም ደላላ በአንድ ማዕከል የሚያገናኝ የገበያ መድረክ ነው።\n\n` +
+    `👉 *የምናቀርባቸው ዋና ዋና አገልግሎቶች፡*\n` +
+    `1. *አዳዲስ ዕቃዎች ሽያጭ፦* አልባሳት፣ ጫማዎች፣ ኤሌክትሮኒክስ እና የቤት ዕቃዎችን ከታማኝ ሱቆች በቀጥታ ማዘዝ።\n` +
+    `2. *የቤት ኪራይ እና ዶርም ጥቆማ፦* ለተማሪዎች ዶርም፣ አፓርትመንት፣ ቪላ እና ሰርቪስ ቤቶችን በፍጥነት ማግኘት።\n` +
+    `3. *ያገለገሉ ዕቃዎች (ግዢና ሽያጭ)፦* ማንኛውንም ያገለገሉ ዕቃዎችን በቀላሉ መሸጥ ወይም ከባለቤቱ መግዛት።\n` +
+    `4. *የደንበኞች ማስታወቂያ ምድብ፦* ማንኛውም ተጠቃሚ የራሱን ምርት በነፃ መዝግቦ ለብዙ ሺህ ደንበኞች ማሳየት የሚችልበት ልዩ አማራጭ።\n\n` +
+    `Siralink ገበያውን ያቀልላል፤ ጊዜና ገንዘብዎን ይቆጥባል! ✨`;
+  return ctx.reply(servicesText, { parse_mode: 'Markdown' });
+});
+
+// --- የደንበኞች ማዕከል መረጃ (በጠየቅከው መሠረት የተስተካከለው ክፍል) ---
+bot.action('about_customer_center', async (ctx) => {
+  await ctx.answerCbQuery();
+  const customerCenterText = `🏢 *የደንበኞች ማዕከል መረጃ* 🏢\n\n` +
+    `ስለ አገልግሎታችን ማንኛውም ጥያቄ፣ አስተያየት ወይም ቅሬታ ካለዎት ከታች ባሉት አድራሻዎች ሊያገኙን ይችላሉ።\n\n` +
+    `📞 *ዋና ስልክ ቁጥር፦* 0946662487\n` +
+    `💬 *የቴሌግራም ዋና ክፍል፦* @SiralinkMarket\n` +
+    `📣 *የማስታወቂያ ቻናል፦* @SiralinkMarket\n\n` +
+    `@ad_is17\n\n` +
+    `@ad_is1\n\n` +
+    `የስራ ሰዓት፡ (24/7)\n` +
+    `እኛን ስለመረጡ እናመሰግናለን! 🙏`;
+  return ctx.reply(customerCenterText, { parse_mode: 'Markdown' });
+});
+
 // ==========================================
 // 🛎 TEXT & PHOTO HANDLING (ቅጾች መቀበያ)
 // ==========================================
@@ -354,7 +380,6 @@ bot.on(['text', 'photo'], async (ctx, next) => {
     session.tipPrice = text;
     const username = ctx.from.username ? `@${ctx.from.username}` : 'የለውም';
     
-    // 🔄 "ካሬ ካሬ" የሚለውን ድግግሞሽ ለማስቀረት የተስተካከለ ስም
     const pName = `የሚሸጥ/የሚከራይ መሬት/ቤት (${session.tipArea} ካሬ)`;
     const pDesc = `የጠቋሚ ስም: ${session.tipName} | ስፋት: ${session.tipArea} m²`;
     const defaultImg = generateMatchedImage(session.tipAddress, '🗺 መሬት/ቤት');
@@ -362,7 +387,6 @@ bot.on(['text', 'photo'], async (ctx, next) => {
     const tipAlert = `📌 *አዲስ የቤት/መሬት ሽያጭ ጥቆማ በደንበኛ ገብቷል!* 📌\n\n👤 *የጠቋሚ ስም:* ${session.tipName}\n📞 *ስልክ ቁጥር:* ${session.tipPhone}\n📍 *ቦታ/አድራሻ:* ${session.tipAddress}\n📐 *ስፋት:* ${session.tipArea} m²\n💰 *ዋጋ:* ${session.tipPrice} ብር\n📱 *ቴሌግራም:* ${username}`;
     
     try {
-      // 🔄 ወደ ርዝራዥ ካታጎሪ ሳይሆን ቀጥታ ከነኢሞጂው "🗺 መሬት/ቤት" ውስጥ ይገባል
       await supabase.from('customer_products').insert([
         { 
           name: pName, 
@@ -376,8 +400,6 @@ bot.on(['text', 'photo'], async (ctx, next) => {
       ]);
 
       await bot.telegram.sendMessage(ADMIN_CHAT_ID, `[የአስተዳዳሪ ማሳወቂያ]\n${tipAlert}`, { parse_mode: 'Markdown' });
-      
-      // 📢 አውቶማቲክ ብሮድካስት
       autoBroadcastNewProduct(pName, '🗺 መሬት/ቤት', session.tipPrice);
 
       await ctx.reply('🎉 እናመሰግናለን! የጥቆማ መረጃዎ በተሳካ ሁኔታ ተመዝግቧል። አሁን ሌሎች ደንበኞች በዋናው ገጽ "👥 በደንበኞች የተጨመሩ" -> "🗺 መሬት/ቤት" ውስጥ በቀጥታ መመልከት ይችላሉ።', mainKeyboard);
@@ -432,7 +454,6 @@ bot.on(['text', 'photo'], async (ctx, next) => {
   if (session.step === 'ADD_PROD_PHONE') {
     session.addProdPhone = text;
     const username = ctx.from.username ? `@${ctx.from.username}` : 'የለውም';
-    
     let dbCatName = session.tempCat;
 
     if (!session.addProdPhoto || session.addProdPhoto === '') {
@@ -455,8 +476,6 @@ bot.on(['text', 'photo'], async (ctx, next) => {
       ]);
       
       await bot.telegram.sendMessage(ADMIN_CHAT_ID, prodAlert, { parse_mode: 'Markdown' });
-
-      // 📢 አውቶማቲክ ብሮድካስት
       autoBroadcastNewProduct(session.addProdName, dbCatName, session.addProdPrice);
 
       await ctx.reply('🎉 ምርትዎ በተሳካ ሁኔታ ተመዝግቧል! አሁን በዋናው ገጽ "👥 በደንበኞች የተጨመሩ" ማውጫ ስር በቀጥታ ይታያል።', mainKeyboard);
@@ -499,19 +518,6 @@ bot.command('broadcast', async (ctx) => {
     for (let u of users) { try { await bot.telegram.sendMessage(u.chat_id, notificationText, { parse_mode: 'Markdown' }); } catch (e) {} }
     ctx.reply(`✅ 📢 መልዕክቱ ተላልፏል!`);
   } catch (err) { ctx.reply('❌ ማስተላለፍ ላይ ስህተት አለ።'); }
-});
-
-// --- የምንሰጣቸው አገልግሎቶች መግለጫ ---
-bot.action('about_services', async (ctx) => {
-  await ctx.answerCbQuery();
-  const servicesText = `💼 *የ Siralink Market ዋና የሥራ መግለጫና አገልግሎቶች* 💼\n\nSiralink Bot ነጋዴዎችንና ሸማቾችን ያለምንም ደላላ በአንድ ማዕከል የሚያገናኝ የገበያ መድረክ ነው።`;
-  return ctx.reply(servicesText, { parse_mode: 'Markdown' });
-});
-
-bot.action('about_customer_center', async (ctx) => {
-  await ctx.answerCbQuery();
-  const customerCenterText = `🏢 *የደንበኞች ማዕከል መረጃ* 🏢\n\n📞 *ስልክ፦* 0946662487\n📣 ቻናል: @SiralinkMarket`;
-  return ctx.reply(customerCenterText);
 });
 
 bot.action(/^order_item_(.+)$/, async (ctx) => {
