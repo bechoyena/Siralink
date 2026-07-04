@@ -6,7 +6,7 @@ const bot = new Telegraf('8577893575:AAE0YpDFrK8GgYBP46uqTRsdM6zGkpec1kU');
 const ADMIN_CHAT_ID = 5406168929;
 
 const SUPABASE_URL = 'https://gyooossgagycyeyffjfr.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIdiRefIjoia3lvb29zc2dhZ3ljeWVmZmpmciIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzgyOTM5OTg4LCJleHAiOjIwOTg1MTU5ODh9.k85DGyIEU_wEzZhE6Qbo-ssiXbhT2gR69SH7KVOZ4NY';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5b29vc3NnYWd5Y3lleWZmamZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5Mzk5ODgsImV4cCI6MjA5ODUxNTk4OH0.k85DGyIEU_wEzZhE6Qbo-ssiXbhT2gR69SH7KVOZ4NY';
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const userSessions = {};
@@ -263,13 +263,13 @@ bot.hears('ℹ️ ስለ እኛ', (ctx) => {
 bot.action('about_services', async (ctx) => {
   await ctx.answerCbQuery();
   const servicesText = `💼 *የ Siralink Market ዋና የሥራ መግለጫና አገልግሎቶች* 💼\n\n` +
-    `Siralink Bot ነጋዴዎችንና ሸማቾችን ያለምንም ደላላ በአንድ ማዕከል የሚያገናኝ የገበያ መድረክ ነው።\n\n` +
-    `👉 *የምናቀርባቸው ዋና ዋና አገልግሎቶች፡*\n` +
-    `1. *አዳዲስ ዕቃዎች ሽያጭ፦* አልባሳት፣ ጫማዎች፣ ኤሌክትሮኒክስ እና የቤት ዕቃዎችን ከታማኝ ሱቆች በቀጥታ ማዘዝ።\n` +
-    `2. *የቤት ኪራይ እና ዶርም ጥቆማ፦* ለተማሪዎች ዶርም፣ አፓርትመንት፣ ቪላ እና ሰርቪስ ቤቶችን በፍጥነት ማግኘት።\n` +
-    `3. *ያገለገሉ ዕቃዎች (ግዢና ሽያጭ)፦* ማንኛውንም ያገለገሉ ዕቃዎችን በቀላሉ መሸጥ ወይም ከባለቤቱ መግዛት።\n` +
-    `4. *የደንበኞች ማስታወቂያ ምድብ፦* ማንኛውም ተጠቃሚ የራሱን ምርት በነፃ መዝግቦ ለብዙ ሺህ ደንበኞች ማሳየት የሚችልበት ልዩ አማራጭ።\n\n` +
-    `Siralink ገበያውን ያቀልላል፤ ጊዜና ገንዘብዎን ይቆጥባል! ✨`;
+                       `Siralink Bot ነጋዴዎችን፣ ሸማቾችን፣ ተከራዮችን እና አከራዮችን ያለምንም ደላላ በአንድ ማዕከል የሚያገናኝ ሁለገብና ዘመናዊ የዲጂታል ገበያ መድረክ ነው።\n\n` +
+                       `*ዋና ዋና አገልግሎቶቻችን፦*\n` +
+                       `፩. *የሱቅ ምርቶች (አዳዲስ ዕቃዎች)፦* ታዋቂ ሱቆችና ድርጅቶች አዳዲስ አልባሳትን፣ ጫማዎችን፣ ኤሌክትሮኒክስና የቤት ቁሳቁሶችን ለገበያ የሚያቀርቡበት ምድብ ነው።\n\n` +
+                       `፪. *የቤትና ዶርም ኪራይ ማዕከል፦* ተማሪዎች ለትምህርት ምቹ የሆኑ ዶርሞችን፣ ግለሰቦች ደግሞ አፓርትመንት፣ ቪላ እና ሰርቪስ ቤቶችን በቀላሉ የሚከራዩበትና የሚፈልጉበት ክፍል ነው።\n\n` +
+                       `፫. *የቤት/መሬት ሽያጭ ጥቆማ፦* የሚሸጡ መሬቶችንና ቤቶችን አድራሻና ስፋት በመሙላት ፈጣን የንግድ ትስስር የሚፈጥርበት ዘመናዊ አማራጭ ነው።\n\n` +
+                       `፬. *ያገለገሉ ዕቃዎች ሽያጭ፦* ማንኛውም ተጠቃሚ የራሱን ያገለገሉ ዕቃዎች ዋጋና ስልክ በመጥቀስ በቀጥታ ለገዢዎች ማቅረብና መሸጥ ይችላል።\n\n` +
+                       `፭. *የደንበኞች ካታጎሪ፦* ደንበኞች የራሳቸውን አዳዲስ ምርቶች በፎቶ ወይም በጽሑፍ በየምድቡ በመመዝገብ ለሺዎች የሚደርሱበት ነፃ የገበያ መድረክ ነው።`;
   return ctx.reply(servicesText, { parse_mode: 'Markdown' });
 });
 
@@ -281,8 +281,8 @@ bot.action('about_customer_center', async (ctx) => {
     `📞 *ዋና ስልክ ቁጥር፦* 0946662487\n` +
     `💬 *የቴሌግራም ዋና ክፍል፦* @SiralinkMarket\n` +
     `📣 *የማስታወቂያ ቻናል፦* @SiralinkMarket\n\n` +
-    `@ad_is17\n\n` +
-    `@ad_is1\n\n` +
+    `@ad\\_is17\n\n` +
+    `@ad\\_is1\n\n` +
     `የስራ ሰዓት፡ (24/7)\n` +
     `እኛን ስለመረጡ እናመሰግናለን! 🙏`;
   return ctx.reply(customerCenterText, { parse_mode: 'Markdown' });
