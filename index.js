@@ -543,36 +543,63 @@ bot.action('confirm_cat_no', async (ctx) => {
   return ctx.reply('የዕቃ ምድብ ይምረጡ፦', selectCatKeyboard);
 });
 
-// --- 📢 የተስተካከለው የብሮድካስት ኮድ ክፍል ---
-bot.command('broadcast', async (ctx) => {
-  if (ctx.from.id !== ADMIN_CHAT_ID) return;
+// --- 📢 ፎቶም ሆነ ነፃ ጽሑፍ በአንድ ላይ የሚያስተላልፍ የብሮድካስት ኮድ ---
+bot.on(['text', 'photo'], async (ctx, next) => {
+  // ተጠቃሚው የጻፈው ትዕዛዝ /broadcast መሆኑን ማረጋገጥ
+  const isCommand = ctx.message.text && ctx.message.text.startsWith('/broadcast');
+  const isCaptionCommand = ctx.message.caption && ctx.message.caption.startsWith('/broadcast');
   
-  const inputText = ctx.message.text.replace('/broadcast', '').trim();
-  
-  if (!inputText) {
-    return ctx.reply('⚠️ *እባክህ መልዕክት አስገባ!*', { parse_mode: 'Markdown' });
-  }
-  
-  let finalMessage = '';
+  if (!isCommand && !isCaptionCommand) return next();
+  if (ctx.from.id !== ADMIN_CHAT_ID) return; // አንተ መሆንህን ያረጋግጣል
 
-  // 🔍 ዋናው መለያ መስመር፡ ጽሑፉ ውስጥ ክፍተት (Space) ካለ ቀጥታ ነፃ ጽሑፍ ነው!
-  if (inputText.includes(' ')) {
-    finalMessage = inputText; // የጻፍከውን እንዳለ ይወስዳል (ምንም አይጨምርም)
-  } else {
-    // ክፍተት ከሌለው (አንድ ቃል ብቻ ከሆነ) በTemplate ይልካል
+  // ጽሑፉን ከትዕዛዙ ነጥሎ ማውጣት (በጽሑፍ ወይም በፎቶ ካፕሽን መልክ ከመጣ)
+  let inputText = '';
+  if (ctx.message.text) {
+    inputText = ctx.message.text.replace('/broadcast', '').trim();
+  } else if (ctx.message.caption) {
+    inputText = ctx.message.caption.replace('/broadcast', '').trim();
+  }
+
+  // ፎቶ ካለ የፎቶውን ID መያዝ
+  let photoId = null;
+  if (ctx.message.photo) {
+    photoId = ctx.message.photo[ctx.message.photo.length - 1].file_id;
+  }
+
+  // ምንም ጽሑፍም ሆነ ፎቶ ካልተላከ
+  if (!inputText && !photoId) {
+    return ctx.reply('⚠️ እባክህ ለሰዎች የሚተላለፍ ጽሑፍ ወይም ፎቶ አብረህ አስገባ!');
+  }
+
+  let finalMessage = '';
+  // 🔍 ጽሑፉ ክፍተት (Space) ካለው ወይም ፎቶ አብሮት ካለ ቀጥታ ነፃ ጽሑፍ/ፎቶ ነው
+  if (inputText.includes(' ') || photoId) {
+    finalMessage = inputText; 
+  } else if (inputText) {
+    // አንድ ቃል ብቻ ከሆነ (ለምሳሌ፦ አልባሳት) በTemplate ይልካል
     finalMessage = `🔔 *አዲስ ምርት ወጥቷል!* 🔔\n\nSiralink Market ላይ በ *${inputText}* ምድብ ስር አዳዲስ ምርቶች አሁን ገብተዋል። ቦቱ ላይ በመግባት አሁኑኑ ይመልከቱ! 🛍✨`;
   }
-  
+
   try {
+    // ሁሉንም የቦቱን ተጠቃሚዎች ከ Supabase ያወጣል
     const { data: users, error } = await supabase.from('bot_users').select('chat_id');
-    if (error || !users || users.length === 0) return ctx.reply('📢 መልዕክት የሚላክላቸው ተጠቃሚዎች አልተገኙም።');
+    if (error || !users || users.length === 0) return ctx.reply('📢 መልዕክት የሚላክላቸው ተጠቃሚዎች በዳታቤዝ ውስጥ አልተገኙም።');
     
     let successCount = 0;
+    
     for (let u of users) { 
       try { 
-        await bot.telegram.sendMessage(u.chat_id, finalMessage, { parse_mode: 'Markdown' }); 
+        if (photoId) {
+          // ፎቶ ካለው በፎቶ መልክ ይልካል
+          await bot.telegram.sendPhoto(u.chat_id, photoId, { caption: finalMessage, parse_mode: 'Markdown' });
+        } else {
+          // ጽሑፍ ብቻ ከሆነ በጽሑፍ ይልካል
+          await bot.telegram.sendMessage(u.chat_id, finalMessage, { parse_mode: 'Markdown' }); 
+        }
         successCount++;
-      } catch (e) {} 
+      } catch (e) {
+        // ቦቱን Block ላደረጉ ሰዎች ስህተት እንዳይሰጥ
+      } 
     }
     ctx.reply(`✅ 📢 መልዕክቱ በተሳካ ሁኔታ ለ ${successCount} ተጠቃሚዎች ተላልፏል!`);
   } catch (err) { 
