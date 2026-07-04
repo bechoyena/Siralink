@@ -129,7 +129,14 @@ bot.hears(customerCategories, async (ctx) => {
     }
     for (let item of items) {
       const txt = `📦 *${item.name}*\n💰 ዋጋ/ኪራይ: ${item.price} ብር\nℹ️ መግለጫ: ${item.description || 'የለውም'}\n🏢 አድራሻ: ${item.shop_name_address || 'የለውም'}\n📞 ስልክ: ${item.phone || 'የለውም'}`;
-      const inlineBtn = Markup.inlineKeyboard([[Markup.button.callback('🛒 አሁን ይደውሉ / ይዘዙ', `order_cust_${item.id}`)]]);
+      
+      let inlineBtn;
+      // መሬት/ቤት ከሆነ የድሮው አዝራር ይሁን፤ ሌሎቹ በሙሉ ግን የ Delivery/Pickup ምርጫ እንዲያሳዩ አዲሱን አዝራር እንሰጣቸዋለን
+      if (clickedText === '🗺 መሬት/ቤት') {
+        inlineBtn = Markup.inlineKeyboard([[Markup.button.callback('🛒 አሁን ይደውሉ / ይዘዙ', `order_cust_${item.id}`)]]);
+      } else {
+        inlineBtn = Markup.inlineKeyboard([[Markup.button.callback('🛒 አሁን ይዘዙ (Order)', `order_cust_choice_${item.id}`)]]);
+      }
       
       if (item.image_url && item.image_url.trim() !== '') {
         try { await ctx.replyWithPhoto(item.image_url, { caption: txt, parse_mode: 'Markdown', ...inlineBtn }); }
@@ -234,7 +241,8 @@ bot.hears('📦 ዕቃዎችን እይ', async (ctx) => {
     }
     for (let item of dbUsed) {
       const txt = `🔄 *${item.name}*\n💰 ዋጋ: ${item.price} ብር\nℹ️ መግለጫ: ${item.description || 'የለውም'}\n📞 ስልክ: ${item.phone || 'የለውም'}`;
-      const inlineBtn = Markup.inlineKeyboard([[Markup.button.callback('🛒 አሁን ይደውሉ / ይዘዙ', `order_cust_${item.id}`)]]);
+      // ያገለገሉ ዕቃዎች ላይም የ Delivery/Pickup ምርጫ እንዲመጣ አዲሱን መለያ (order_cust_choice_) እንሰጠዋለን
+      const inlineBtn = Markup.inlineKeyboard([[Markup.button.callback('🛒 አሁን ይዘዙ (Order)', `order_cust_choice_${item.id}`)]]);
       if (item.image_url && item.image_url.trim() !== '') {
         try { await ctx.replyWithPhoto(item.image_url, { caption: txt, parse_mode: 'Markdown', ...inlineBtn }); } 
         catch { await ctx.reply(txt, inlineBtn); }
@@ -469,7 +477,7 @@ bot.on(['text', 'photo'], async (ctx, next) => {
   if (session.step === 'ADD_PROD_ADDRESS') {
     session.addProdAddress = text;
     session.step = 'ADD_PROD_PHONE';
-    return ctx.reply('📞 በመጨረሻም ደንበኞች እርስዎን ሊያገኙበት የሚችሉትን *ትክክለኛ ስልክ ቁጥር* ያስገቡ፦');
+    return ctx.reply('🏢 እሺ፣ ቀጥለው *የድርጅቱን/የሽያጩን ስም እና ዕቃው የሚገኝበትን መገኛ አድራሻ* አብረው ይጻፉልኝ፦');
   }
   if (session.step === 'ADD_PROD_PHONE') {
     session.addProdPhone = text;
@@ -550,7 +558,7 @@ bot.command('broadcast', async (ctx) => {
 });
 
 // ==========================================
-// 🛒 እቃ ማዘዣ መጀመሪያ (DELIVERY OR PICKUP ምርጫ)
+// 🛒 የሱቆች መጋዘን እቃ ማዘዣ መጀመሪያ
 // ==========================================
 bot.action(/^order_item_(.+)$/, async (ctx) => {
   const productId = ctx.match[1];
@@ -561,7 +569,27 @@ bot.action(/^order_item_(.+)$/, async (ctx) => {
     userSessions[ctx.from.id] = { product: data };
     await ctx.answerCbQuery();
     
-    // 📢 የ "Delivery" እና "Pickup" ምርጫ ቁልፎች
+    const choiceKeyboard = Markup.inlineKeyboard([
+      [Markup.button.callback('🚚 Delivery', `choose_delivery_${productId}`)],
+      [Markup.button.callback('🏪 Pickup', `choose_pickup_${productId}`)]
+    ]);
+    
+    await ctx.reply('❓ ይህንን ዕቃ እንዴት መቀበል ይፈልጋሉ? ከታች ካሉት አማራጮች አንዱን ይምረጡ፦', choiceKeyboard);
+  } catch (err) { console.error(err); }
+});
+
+// ==========================================
+// 👥 በደንበኞች የተጨመሩ እና ያገለገሉ ዕቃዎች ማዘዣ መጀመሪያ
+// ==========================================
+bot.action(/^order_cust_choice_(.+)$/, async (ctx) => {
+  const productId = ctx.match[1];
+  try {
+    const { data, error } = await supabase.from('customer_products').select('*').eq('id', productId).single();
+    if (error || !data) return ctx.reply('❌ ይቅርታ፣ የዕቃው መረጃ አልተገኘም!');
+    
+    userSessions[ctx.from.id] = { product: data };
+    await ctx.answerCbQuery();
+    
     const choiceKeyboard = Markup.inlineKeyboard([
       [Markup.button.callback('🚚 Delivery', `choose_delivery_${productId}`)],
       [Markup.button.callback('🏪 Pickup', `choose_pickup_${productId}`)]
@@ -573,7 +601,6 @@ bot.action(/^order_item_(.+)$/, async (ctx) => {
 
 // 🏪 በቦታው ሄደው መረከብ (Pickup) ሲመርጡ
 bot.action(/^choose_pickup_(.+)$/, async (ctx) => {
-  const productId = ctx.match[1];
   const session = userSessions[ctx.from.id];
   await ctx.answerCbQuery();
   
@@ -582,10 +609,10 @@ bot.action(/^choose_pickup_(.+)$/, async (ctx) => {
   const prod = session.product;
   const customerUser = ctx.from.username ? `@${ctx.from.username}` : 'የለውም';
   
-  // ለገዢው የሚላክ የባለሱቁ መረጃ
-  const pickupGuide = `🎉 ትዕዛዝዎ በትክክል ደርሷል!\n\n🏪 ሱቁ ድረስ ሄደው ዕቃውን ለመረከብ ስለመረጡ እናመሰግናለን። ባለሱቁን ለማግኘት የሚከተለውን መረጃ ይጠቀሙ፦\n\n🏢 የሱቅ/ባለቤት ስም: ${prod.description || 'Siralink Vendor'}\n📍 አድራሻ: ${prod.shop_name_address || 'በቦቱ ላይ የተገለጸው'}\n📞 ስልክ ቁጥር: ${prod.phone || 'የለውም'}\n\nዕቃውን ለመረከብ ሲሄዱ ይህንን መልዕክት ማሳየት ይችላሉ። መልካም ግብይት! ✨`;
+  // ለገዢው የሚላክ መረጃ
+  const pickupGuide = `🎉 ትዕዛዝዎ በትክክል ደርሷል!\n\n🏪 በቦታው ሄደው ዕቃውን ለመረከብ ስለመረጡ እናመሰግናለን። ባለቤቱን ለማግኘት የሚከተለውን መረጃ ይጠቀሙ፦\n\n🏢 የሱቅ/ባለቤት ስም: ${prod.description ? prod.description.substring(0, 50) : 'Siralink Vendor'}\n📍 አድራሻ: ${prod.shop_name_address || 'በቦቱ ላይ የተገለጸው'}\n📞 ስልክ ቁጥር: ${prod.phone || 'የለውም'}\n\nዕቃውን ለመረከብ ሲሄዱ ይህንን መልዕክት ማሳየት ይችላሉ። መልካም ግብይት! ✨`;
   
-  // ለአስተዳዳሪው/ለባለሱቁ የሚላክ መረጃ
+  // ለአስተዳዳሪው የሚላክ መረጃ
   const alertMessage = `🏪 አዲስ የዕቃ ትዕዛዝ (Pickup) ደርሷል! 🏪\n\n🆔 የምርት መለያ: #${prod.id}\n📦 ዕቃ: ${prod.name}\n💰 ዋጋ: ${prod.price} ብር\n🚚 የአቅርቦት ሁኔታ: Pickup (በቦታው ሄዶ የሚረከብ)\n\n👤 ገዢ: ${ctx.from.first_name}\n📱 ቴሌግራም: ${customerUser}`;
   
   try {
