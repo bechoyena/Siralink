@@ -290,7 +290,7 @@ bot.action('about_customer_center', async (ctx) => {
 });
 
 // ==========================================
-// 🛎 TEXT & PHOTO HANDLING (ቅጾች መቀበያ)
+// 🛎 TEXT & PHOTO HANDLING (ቅጾች መቀበያ - የተስተካከለ)
 // ==========================================
 bot.on(['text', 'photo'], async (ctx, next) => {
   const session = userSessions[ctx.from.id];
@@ -317,19 +317,26 @@ bot.on(['text', 'photo'], async (ctx, next) => {
     session.address = text;
     const prod = session.product;
     const customerUser = ctx.from.username ? `@${ctx.from.username}` : 'የለውም';
-    const alertMessage = `🛍 *አዲስ የዕቃ ትዕዛዝ ደርሷል!* 🛍\n\n🆔 *የምርት መለያ:* #${prod.id}\n📦 *ዕቃ:* ${prod.name}\n💰 *ዋጋ:* ${prod.price} ብር\n\n👤 *የደንበኛ ስም:* ${session.name}\n📞 *ስልክ ቁጥር:* ${session.phone}\n📍 *አድራሻ:* ${session.address}\n📱 *ቴሌግራም:* ${customerUser}`;
+    
+    // በደህንነቱ የተጠበቀ ጽሑፍ (Markdown Error ለመከላከል)
+    const alertMessage = `🛍 አዲስ የዕቃ ትዕዛዝ ደርሷል! 🛍\n\n🆔 የምርት መለያ: #${prod.id}\n📦 ዕቃ: ${prod.name}\n💰 ዋጋ: ${prod.price} ብር\n\n👤 የደንበኛ ስም: ${session.name}\n📞 ስልክ ቁጥር: ${session.phone}\n📍 አድራሻ: ${session.address}\n📱 ቴሌግራም: ${customerUser}`;
+    
     try {
-      if (prod.shop_owner_id && !isNaN(prod.shop_owner_id)) {
-        try { await bot.telegram.sendMessage(Number(prod.shop_owner_id), alertMessage, { parse_mode: 'Markdown' }); } catch (e) {}
+      // ለሱቅ ባለቤቱ መላኪያ (ካለ)
+      if (prod.shop_owner_id && !isNaN(prod.shop_owner_id) && Number(prod.shop_owner_id) !== 0) {
+        try { await bot.telegram.sendMessage(Number(prod.shop_owner_id), alertMessage); } catch (e) {}
       }
-      await bot.telegram.sendMessage(ADMIN_CHAT_ID, `[የትዕዛዝ መቆጣጠሪያ ኮፒ]\n${alertMessage}`, { parse_mode: 'Markdown' });
+      // ዋናው አስተዳዳሪ (አንተ ጋር) ሁልጊዜ መላክ አለበት
+      await bot.telegram.sendMessage(ADMIN_CHAT_ID, `[የትዕዛዝ መቆጣጠሪያ ኮፒ]\n${alertMessage}`);
       await ctx.reply('🎉 ማረጋገጫ: ትዕዛዝዎ በተሳካ ሁኔታ ተመዝግቧል! በቅርቡ እናገኝዎታለን።', mainKeyboard);
-    } catch (err) { await ctx.reply('❌ ትዕዛዙን ማስተላለፍ ላይ ችግር አጋጥሟል።', mainKeyboard); }
+    } catch (err) { 
+      await ctx.reply('❌ ትዕዛዙን ማስተላለፍ ላይ ችግር አጋጥሟል።', mainKeyboard); 
+    }
     delete userSessions[ctx.from.id];
     return;
   }
 
-  // --- 🔄 4ኛ ህግ፡ ያገለገለ እቃ መሸጫ ፎርም (በራሱ ጊዜ ወደ "⚙️ ያገለገሉ ዕቃዎች ምድብ" የሚገባ) ---
+  // --- 🔄 ያገለገለ እቃ መሸጫ ፎርም ---
   if (session.step === 'ASK_SELL_NAME') {
     session.sellName = text;
     session.step = 'ASK_SELL_PRICE';
@@ -347,7 +354,6 @@ bot.on(['text', 'photo'], async (ctx, next) => {
     const defaultImg = generateMatchedImage(session.sellName, finalCat);
     
     try {
-      // 🚀 automatically ወደ customer_products ገብቶ በ "⚙️ ያገለገሉ ዕቃዎች ምድብ" ስር ይነበባል
       await supabase.from('customer_products').insert([
         { 
           name: session.sellName, 
@@ -361,13 +367,20 @@ bot.on(['text', 'photo'], async (ctx, next) => {
       ]);
       
       autoBroadcastNewProduct(session.sellName, finalCat, session.sellPrice);
-      await ctx.reply('🎉 ማረጋገጫ፡ ያገለገለው ዕቃዎ በተሳካ ሁኔታ ተመዝግቧል! አሁን "👥 በደንበኞች የተጨመሩ" -> "⚙️ ያገለገሉ ዕቃዎች ምድብ" ውስጥ በቀጥታ ይታያል።', mainKeyboard);
-    } catch (err) { await ctx.reply('📥 መረጃው በተለዋጭ መንገድ ተመዝግቧል።', mainKeyboard); }
+      
+      // አንተ ጋር ማስታወቂያ እንዲመጣ የተጨመረ
+      const adminNotice = `🔄 ያገለገለ ዕቃ ምዝገባ 🔄\n\n📦 ዕቃ፡ ${session.sellName}\n💰 ዋጋ፡ ${session.sellPrice} ብር\n📞 ስልክ፡ ${session.sellPhone}\n📱 ቴሌግራም፡ ${username}`;
+      await bot.telegram.sendMessage(ADMIN_CHAT_ID, adminNotice);
+
+      await ctx.reply('🎉 ማረጋገጫ፡ ያገለገለው ዕቃዎ በተሳካ ሁኔታ ተመዝግቧል! አሁን "👥 በደንበኞች የተጨመሩ" ውስጥ በቀጥታ ይታያል።', mainKeyboard);
+    } catch (err) { 
+      await ctx.reply('❌ መረጃውን መመዝገብ አልተቻለም።', mainKeyboard); 
+    }
     delete userSessions[ctx.from.id];
     return;
   }
 
-  // --- 📌 5ኛ ህግ፡ የቤት/መሬት ጥቆማ መቀበያ ፎርም (በራሱ ጊዜ ወደ "🗺 መሬት/ቤት" የሚገባ) ---
+  // --- 📌 የቤት/መሬት ጥቆማ መቀበያ ፎርም ---
   if (session.step === 'TIP_NAME') {
     session.tipName = text;
     session.step = 'TIP_PHONE';
@@ -397,10 +410,9 @@ bot.on(['text', 'photo'], async (ctx, next) => {
     const finalCat = '🗺 መሬት/ቤት';
     const defaultImg = generateMatchedImage(session.tipAddress, finalCat);
 
-    const tipAlert = `📌 *አዲስ የቤት/መሬት ሽያጭ ጥቆማ በደንበኛ ገብቷል!* 📌\n\n👤 *የጠቋሚ ስም:* ${session.tipName}\n📞 *ስልክ ቁጥር:* ${session.tipPhone}\n📍 *ቦታ/አድራሻ:* ${session.tipAddress}\n📐 *ስፋት:* ${session.tipArea} m²\n💰 *ዋጋ:* ${session.tipPrice} ብር\n📱 *ቴሌግራም:* ${username}`;
+    const tipAlert = `📌 አዲስ የቤት/መሬት ሽያጭ ጥቆማ በደንበኛ ገብቷል! 📌\n\n👤 የጠቋሚ ስም: ${session.tipName}\n📞 ስልክ ቁጥር: ${session.tipPhone}\n📍 ቦታ/አድራሻ: ${session.tipAddress}\n📐 ስፋት: ${session.tipArea} m²\n💰 ዋጋ: ${session.tipPrice} ብር\n📱 ቴሌግራም: ${username}`;
     
     try {
-      // 🚀 automatically ወደ customer_products ገብቶ በ "🗺 መሬት/ቤት" ስር ይመደባል
       await supabase.from('customer_products').insert([
         { 
           name: pName, 
@@ -413,18 +425,19 @@ bot.on(['text', 'photo'], async (ctx, next) => {
         }
       ]);
 
-      await bot.telegram.sendMessage(ADMIN_CHAT_ID, `[የአስተዳዳሪ ማሳወቂያ]\n${tipAlert}`, { parse_mode: 'Markdown' });
+      // እዚህ ጋር ያለውን parse_mode አጥፍተነዋል (ስህተት እንዳይፈጥር)
+      await bot.telegram.sendMessage(ADMIN_CHAT_ID, `[የአስተዳዳሪ ማሳወቂያ]\n${tipAlert}`);
       autoBroadcastNewProduct(pName, finalCat, session.tipPrice);
 
-      await ctx.reply('🎉 እናመሰግናለን! የጥቆማ መረጃዎ በተሳካ ሁኔታ ተመዝግቧል። አሁን ሌሎች ደንበኞች በዋናው ገጽ "👥 በደንበኞች የተጨመሩ" -> "🗺 መሬት/ቤት" ውስጥ በቀጥታ መመልከት ይችላሉ።', mainKeyboard);
+      await ctx.reply('🎉 እናመሰግናለን! የጥቆማ መረጃዎ በተሳካ ሁኔታ ተመዝግቧል። አሁን ሌሎች ደንበኞች "👥 በደንበኞች የተጨመሩ" -> "🗺 መሬት/ቤት" ውስጥ በቀጥታ መመልከት ይችላሉ።', mainKeyboard);
     } catch (err) { 
-      await ctx.reply('✅ ጥቆማዎ ተመዝግቧል። እናመሰግናለን!', mainKeyboard); 
+      await ctx.reply('❌ ጥቆማውን መመዝገብ አልተቻለም። እባክዎ ድጋሚ ይሞክሩ።', mainKeyboard); 
     }
     delete userSessions[ctx.from.id];
     return;
   }
 
-  // --- ➕ 1ኛ፣ 2ኛ፣ 3ኛ ህግ፡ አዲስ ምርት መመዝገቢያ (AUTOMATICALLY ወደ ደንበኞች ማዕከል ምድቦች የሚሄድ) ---
+  // --- ➕ አዲስ ምርት መመዝገቢያ (ለአልባሳት፣ የቤት እቃና ኤሌክትሮኒክስ) ---
   if (session.step === 'ADD_PROD_NAME') {
     session.addProdName = text;
     session.step = 'ADD_PROD_PRICE';
@@ -469,19 +482,12 @@ bot.on(['text', 'photo'], async (ctx, next) => {
     session.addProdPhone = text;
     const username = ctx.from.username ? `@${ctx.from.username}` : 'የለውም';
     
-    // 🔥 የአውቶማቲክ ምደባ ህግ (Mapping Logic) እዚህ ጋር ነው በትክክል የተቀመጠው፦
     let targetCustomerCategory = '';
-    
-    // 1. የሴቶች/የወንዶች ልብስና ጫማዎች ➡️ "👔 አልባሳትና ጫማ" ውስጥ ይገባሉ
     if (session.tempCat === '👗 የሴቶች ልብስ' || session.tempCat === '👕 የወንዶች ልብስ' || session.tempCat === '👟 ጫማዎች') {
       targetCustomerCategory = '👔 አልባሳትና ጫማ';
-    }
-    // 2. የቤት ዕቃዎች ➡️ "🛋 የቤት ዕቃዎች ምድብ" ውስጥ ይገባሉ
-    else if (session.tempCat === '🛍 የቤት ዕቃዎች') {
+    } else if (session.tempCat === '🛍 የቤት ዕቃዎች') {
       targetCustomerCategory = '🛋 የቤት ዕቃዎች ምድብ';
-    }
-    // 3. ኤሌክትሮንክስ ➡️ "💻 ኤሌክትሮኒክስ ምድብ" ውስጥ ይገባሉ
-    else if (session.tempCat === '🔌 ኤሌክትሮንክስ') {
+    } else if (session.tempCat === '🔌 ኤሌክትሮንክስ') {
       targetCustomerCategory = '💻 ኤሌክትሮኒክስ ምድብ';
     }
 
@@ -489,15 +495,15 @@ bot.on(['text', 'photo'], async (ctx, next) => {
       session.addProdPhoto = generateMatchedImage(session.addProdName, targetCustomerCategory);
     }
 
-    const prodAlert = `➕ *በደንበኞች ማዕከል አዲስ ምርት ገብቷል!* ➕\n\n📦 *የምርት ስም:* ${session.addProdName}\n💰 *ዋጋ:* ${session.addProdPrice} ብር\n🗂 *የህዝብ እይታ ምድብ:* ${targetCustomerCategory}\nℹ *መግለጫ:* ${session.addProdDesc}\n🏢 *አድራሻ:* ${session.addProdAddress}\n📞 *ስልክ ቁጥር:* ${session.addProdPhone}\n👤 *አስመዝጋቢ:* ${ctx.from.first_name} (${username})`;
+    const prodAlert = `➕ በደንበኞች ማዕከል አዲስ ምርት ገብቷል! ➕\n\n📦 የምርት ስም: ${session.addProdName}\n💰 ዋጋ: ${session.addProdPrice} ብር\n🗂 የህዝብ እይታ ምድብ: ${targetCustomerCategory}\nℹ መግለጫ: ${session.addProdDesc}\n🏢 አድራሻ: ${session.addProdAddress}\n📞 ስልክ ቁጥር: ${session.addProdPhone}\n👤 አስመዝጋቢ: ${ctx.from.first_name} (${username})`;
     
     try {
-      // 🚀 automatically ወደ customer_products ቴብል ይገባል! (በ "👥 በደንበኞች የተጨመሩ" ስር እንዲነበብ)
+      // 🚀 ወደ Supabase መረጃ ማስገቢያ
       await supabase.from('customer_products').insert([
         { 
           name: session.addProdName, 
           price: session.addProdPrice, 
-          category: targetCustomerCategory, // በትክክል የተመደበው ምድብ
+          category: targetCustomerCategory, 
           description: session.addProdDesc, 
           shop_name_address: session.addProdAddress, 
           phone: session.addProdPhone,
@@ -505,12 +511,14 @@ bot.on(['text', 'photo'], async (ctx, next) => {
         }
       ]);
       
-      await bot.telegram.sendMessage(ADMIN_CHAT_ID, prodAlert, { parse_mode: 'Markdown' });
+      // 💥 እዚህ ጋር parse_mode ስህተት እንዳይፈጥር ተወግዷል፤ መልዕክቱ ቀጥታ ለአንተ ይደርሳል
+      await bot.telegram.sendMessage(ADMIN_CHAT_ID, prodAlert);
       autoBroadcastNewProduct(session.addProdName, targetCustomerCategory, session.addProdPrice);
 
       await ctx.reply(`🎉 ምርትዎ በተሳካ ሁኔታ ተመዝግቧል! አሁን በዋናው ገጽ "👥 በደንበኞች የተጨመሩ" -> "${targetCustomerCategory}" ስር ለሁሉም ተጠቃሚዎች በቀጥታ ይታያል።`, mainKeyboard);
     } catch (err) {
-      await ctx.reply('❌ ምርቱን መመዝገብ አልተቻለም።', mainKeyboard);
+      console.error(err);
+      await ctx.reply('❌ ምርቱን መመዝገብ አልተቻለም። እባክዎ ደግመው ይሞክሩ።', mainKeyboard);
     }
     delete userSessions[ctx.from.id];
     return;
