@@ -128,10 +128,24 @@ bot.hears(customerCategories, async (ctx) => {
       return ctx.reply(`በዚህ ምድብ (${clickedText}) ውስጥ በአሁኑ ሰዓት የተጫነ ዕቃ/ጥቆማ የለም።`, customerCatKeyboard);
     }
     for (let item of items) {
-      const txt = `📦 *${item.name}*\n💰 ዋጋ/ኪራይ: ${item.price} ብር\nℹ️ መግለጫ: ${item.description || 'የለውም'}\n🏢 አድራሻ: ${item.shop_name_address || 'የለውም'}\n📞 ስልክ: ${item.phone || 'የለውም'}`;
+      // ለ መሬት/ቤት የጥቆማ ምድቡን ለይቶ የሚያሳይ ጽሑፍ ማዘጋጀት
+      let displayTitle = item.name;
+      if (clickedText === '🗺 መሬት/ቤት' && item.description && item.description.includes('|| टाइप:')) {
+        const typePart = item.description.split('|| टाइप:')[1];
+        if (typePart === 'land') displayTitle = `[መሬት] ${item.name}`;
+        else if (typePart === 'house_sell') displayTitle = `[የሚሸጥ ቤት] ${item.name}`;
+        else if (typePart === 'house_rent') displayTitle = `[የሚከራይ ቤት] ${item.name}`;
+      }
+
+      // ከላይ የተለየውን ንፁህ መግለጫ ብቻ ለይቶ ማውጣት
+      let cleanDesc = item.description || 'የለውም';
+      if (cleanDesc.includes('|| टाइप:')) {
+        cleanDesc = cleanDesc.split('|| टाइप:')[0].trim();
+      }
+
+      const txt = `📦 *${displayTitle}*\n💰 ዋጋ/ኪራይ: ${item.price} ብር\nℹ️ መግለጫ: ${cleanDesc}\n🏢 አድራሻ: ${item.shop_name_address || 'የለውም'}\n📞 ስልክ: ${item.phone || 'የለውም'}`;
       
       let inlineBtn;
-      // መሬት/ቤት ከሆነ የድሮው አዝራር ይሁን፤ ሌሎቹ በሙሉ ግን የ Delivery/Pickup ምርጫ እንዲያሳዩ አዲሱን አዝራር እንሰጣቸዋለን
       if (clickedText === '🗺 መሬት/ቤት') {
         inlineBtn = Markup.inlineKeyboard([[Markup.button.callback('🛒 አሁን ይደውሉ / ይዘዙ', `order_cust_${item.id}`)]]);
       } else {
@@ -241,7 +255,6 @@ bot.hears('📦 ዕቃዎችን እይ', async (ctx) => {
     }
     for (let item of dbUsed) {
       const txt = `🔄 *${item.name}*\n💰 ዋጋ: ${item.price} ብር\nℹ️ መግለጫ: ${item.description || 'የለውም'}\n📞 ስልክ: ${item.phone || 'የለውም'}`;
-      // ያገለገሉ ዕቃዎች ላይም የ Delivery/Pickup ምርጫ እንዲመጣ አዲሱን መለያ (order_cust_choice_) እንሰጠዋለን
       const inlineBtn = Markup.inlineKeyboard([[Markup.button.callback('🛒 አሁን ይዘዙ (Order)', `order_cust_choice_${item.id}`)]]);
       if (item.image_url && item.image_url.trim() !== '') {
         try { await ctx.replyWithPhoto(item.image_url, { caption: txt, parse_mode: 'Markdown', ...inlineBtn }); } 
@@ -271,13 +284,13 @@ bot.hears('ℹ️ ስለ እኛ', (ctx) => {
 bot.action('about_services', async (ctx) => {
   await ctx.answerCbQuery();
   const servicesText = `💼 *የ Siralink Market ዋና የሥራ መግለጫና አገልግሎቶች* 💼\n\n` +
-                       `Siralink Bot ነጋዴዎችን፣ ሸማቾችን፣ ተከራዮችን እና አከራዮችን ያለምንም ደላላ በአንድ ማዕከል የሚያገናኝ ሁለገብና ዘመናዊ የዲጂታል ገበያ መድረክ ነው።\n\n` +
-                       `*ዋና ዋና አገልግሎቶቻችን፦*\n` +
-                       `፩. *የሱቅ ምርቶች (አዳዲስ ዕቃዎች)፦* ታዋቂ ሱቆችና ድርጅቶች አዳዲስ አልባሳትን፣ ጫማዎችን፣ ኤሌክትሮኒክስና የቤት ቁሳቁሶችን ለገበያ የሚያቀርቡበት ምድብ ነው።\n\n` +
-                       `፪. *የቤትና ዶርም ኪራይ ማዕከል፦* ተማሪዎች ለትምህርት ምቹ የሆኑ ዶርሞችን፣ ግለሰቦች ደግሞ አፓርትመንት፣ ቪላ እና ሰርቪስ ቤቶችን በቀላሉ የሚከራዩበትና የሚፈልጉበት ክፍል ነው።\n\n` +
-                       `፫. *የቤት/መሬት ሽያጭ ጥቆማ፦* የሚሸጡ መሬቶችንና ቤቶችን አድራሻና ስፋት በመሙላት ፈጣን የንግድ ትስስር የሚፈጥርበት ዘመናዊ አማራጭ ነው።\n\n` +
-                       `፬. *ያገለገሉ ዕቃዎች ሽያጭ፦* ማንኛውም ተጠቃሚ የራሱን ያገለገሉ ዕቃዎች ዋጋና ስልክ በመጥቀስ በቀጥታ ለገዢዎች ማቅረብና መሸጥ ይችላል።\n\n` +
-                       `፭. *የደንበኞች ካታጎሪ፦* ደንበኞች የራሳቸውን አዳዲስ ምርቶች በፎቶ ወይም በጽሑፍ በየምድቡ በመመዝገብ ለሺዎች የሚደርሱበት ነፃ የገበያ መድረክ ነው።`;
+                        `Siralink Bot ነጋዴዎችን፣ ሸማቾችን፣ ተከራዮችን እና አከራዮችን ያለምንም ደላላ በአንድ ማዕከል የሚያገናኝ ሁለገብና ዘመናዊ የዲጂታል ገበያ መድረክ ነው።\n\n` +
+                        `*ዋና ዋና አገልግሎቶቻችን፦*\n` +
+                        `፩. *የሱቅ ምርቶች (አዳዲስ ዕቃዎች)፦* ታዋቂ ሱቆችና ድርጅቶች አዳዲስ አልባሳትን፣ ጫማዎችን፣ ኤሌክትሮኒክስና የቤት ቁሳቁሶችን ለገበያ የሚያቀርቡበት ምድብ ነው።\n\n` +
+                        `፪. *የቤትና ዶርም ኪራይ ማዕከል፦* ተማሪዎች ለትምህርት ምቹ የሆኑ ዶርሞችን፣ ግለሰቦች ደግሞ አፓርትመንት፣ ቪላ እና ሰርቪስ ቤቶችን በቀላሉ የሚከራዩበትና የሚፈልጉበት ክፍል ነው።\n\n` +
+                        `፫. *የቤት/መሬት ሽያጭ ጥቆማ፦* የሚሸጡ መሬቶችንና ቤቶችን አድራሻና ስፋት በመሙላት ፈጣን የንግድ ትስስር የሚፈጥርበት ዘመናዊ አማራጭ ነው።\n\n` +
+                        `፬. *የማሳወቂያ ማእከል፦* ማንኛውም ተጠቃሚ የራሱን ያገለገሉ ዕቃዎች ዋጋና ስልክ በመጥቀስ በቀጥታ ለገዢዎች ማቅረብና መሸጥ ይችላል።\n\n` +
+                        `፭. *የደንበኞች ካታጎሪ፦* ደንበኞች የራሳቸውን አዳዲስ ምርቶች በፎቶ ወይም በጽሑፍ በየምድቡ በመመዝገብ ለሺዎች የሚደርሱበት ነፃ የገበያ መድረክ ነው።`;
   return ctx.reply(servicesText, { parse_mode: 'Markdown' });
 });
 
@@ -339,7 +352,7 @@ bot.on(['text', 'photo'], async (ctx, next) => {
     return;
   }
 
-  // --- 🔄 ያገለገለ እቃ መሸጫ ፎርም ---
+  // --- 🔄 ያገለገል እቃ መሸጫ ፎርም ---
   if (session.step === 'ASK_SELL_NAME') {
     session.sellName = text;
     session.step = 'ASK_SELL_PRICE';
@@ -405,37 +418,13 @@ bot.on(['text', 'photo'], async (ctx, next) => {
   }
   if (session.step === 'TIP_PRICE') {
     session.tipPrice = text;
-    const username = ctx.from.username ? `@${ctx.from.username}` : 'የለውም';
-    
-    const pName = `የሚሸጥ/የሚከራይ መሬት/ቤት (${session.tipArea} ካሬ)`;
-    const pDesc = `የጠቋሚ ስም: ${session.tipName} | ስፋት: ${session.tipArea} m²`;
-    const finalCat = '🗺 መሬት/ቤት';
-    const defaultImg = generateMatchedImage(session.tipAddress, finalCat);
-
-    const tipAlert = `📌 አዲስ የቤት/መሬት ሽያጭ ጥቆማ በደንበኛ ገብቷል! 📌\n\n👤 የጠቋሚ ስም: ${session.tipName}\n📞 ስልክ ቁጥር: ${session.tipPhone}\n📍 ቦታ/አድራሻ: ${session.tipAddress}\n📐 ስፋት: ${session.tipArea} m²\n💰 ዋጋ: ${session.tipPrice} ብር\n📱 ቴሌግራም: ${username}`;
-    
-    try {
-      await supabase.from('customer_products').insert([
-        { 
-          name: pName, 
-          price: session.tipPrice, 
-          category: finalCat, 
-          description: pDesc, 
-          shop_name_address: session.tipAddress, 
-          phone: session.tipPhone,
-          image_url: defaultImg
-        }
-      ]);
-
-      await bot.telegram.sendMessage(ADMIN_CHAT_ID, `[የአስተዳዳሪ ማሳወቂያ]\n${tipAlert}`);
-      autoBroadcastNewProduct(pName, finalCat, session.tipPrice);
-
-      await ctx.reply('🎉 እናመሰግናለን! የጥቆማ መረጃዎ በተሳካ ሁኔታ ተመዝግቧል። አሁን ሌሎች ደንበኞች "👥 በደንበኞች የተጨመሩ" -> "🗺 መሬት/ቤት" ውስጥ በቀጥታ መመልከት ይችላሉ።', mainKeyboard);
-    } catch (err) { 
-      await ctx.reply('❌ ጥቆማውን መመዝገብ አልተቻለም። እባክዎ ድጋሚ ይሞክሩ።', mainKeyboard); 
-    }
-    delete userSessions[ctx.from.id];
-    return;
+    session.step = 'CHOOSE_TIP_TYPE';
+    // መረጃዎች ተሞልተው ሲያልቁ የመጀመሪያውን የሁለት ምርጫ አዝራሮች ማሳየት
+    const typeKeyboard = Markup.inlineKeyboard([
+      [Markup.button.callback('🗺 የመሬት ጥቆማ', 'tip_type_land')],
+      [Markup.button.callback('🏠 የቤት ጥቆማ', 'tip_type_house')]
+    ]);
+    return ctx.reply('🗂 በጣም ጥሩ! ይህ ጥቆማ በየትኛው ካታጎሪ ውስጥ እንዲመደብ ይፈልጋሉ? ከታች ይምረጡ፦', typeKeyboard);
   }
 
   // --- ➕ አዲስ ምርት መመዝገቢያ (ለአልባሳት፣ የቤት እቃና ኤሌክትሮኒክስ) ---
@@ -543,55 +532,126 @@ bot.action('confirm_cat_no', async (ctx) => {
   return ctx.reply('የዕቃ ምድብ ይምረጡ፦', selectCatKeyboard);
 });
 
+// ==========================================
+// 📌 የጥቆማ የውስጥ አዝራሮች መቆጣጠሪያ (CALLBACK ACTIONS)
+// ==========================================
+bot.action('tip_type_land', async (ctx) => {
+  const session = userSessions[ctx.from.id];
+  if (!session || session.step !== 'CHOOSE_TIP_TYPE') return ctx.answerCbQuery();
+  await ctx.answerCbQuery();
+  session.tipFinalType = 'land';
+  return saveSubmittedTip(ctx, session);
+});
+
+bot.action('tip_type_house', async (ctx) => {
+  const session = userSessions[ctx.from.id];
+  if (!session || session.step !== 'CHOOSE_TIP_TYPE') return ctx.answerCbQuery();
+  await ctx.answerCbQuery();
+  
+  session.step = 'CHOOSE_HOUSE_SUBTYPE';
+  const houseSubKeyboard = Markup.inlineKeyboard([
+    [Markup.button.callback('💰 የሚሸጥ', 'house_sub_sell')],
+    [Markup.button.callback('🔑 የኪራይ', 'house_sub_rent')]
+  ]);
+  return ctx.editMessageText('🏠 እሺ የቤት ጥቆማ መርጠዋል። ቤቱ የሚሸጥ ነው ወይስ የሚከራይ? ከታች ይምረጡ፦', houseSubKeyboard);
+});
+
+bot.action('house_sub_sell', async (ctx) => {
+  const session = userSessions[ctx.from.id];
+  if (!session || session.step !== 'CHOOSE_HOUSE_SUBTYPE') return ctx.answerCbQuery();
+  await ctx.answerCbQuery();
+  session.tipFinalType = 'house_sell';
+  return saveSubmittedTip(ctx, session);
+});
+
+bot.action('house_sub_rent', async (ctx) => {
+  const session = userSessions[ctx.from.id];
+  if (!session || session.step !== 'CHOOSE_HOUSE_SUBTYPE') return ctx.answerCbQuery();
+  await ctx.answerCbQuery();
+  session.tipFinalType = 'house_rent';
+  return saveSubmittedTip(ctx, session);
+});
+
+// የጥቆማ መረጃዎችን በዳታቤዝ ውስጥ አስቀምጦ ሂደቱን የሚያጠናቅቅ ፈንክሽን
+async function saveSubmittedTip(ctx, session) {
+  const username = ctx.from.username ? `@${ctx.from.username}` : 'የለውም';
+  const finalCat = '🗺 መሬት/ቤት';
+  const defaultImg = generateMatchedImage(session.tipAddress, finalCat);
+
+  let typeAmharic = '';
+  if (session.tipFinalType === 'land') typeAmharic = 'መሬት';
+  else if (session.tipFinalType === 'house_sell') typeAmharic = 'የሚሸጥ ቤት';
+  else if (session.tipFinalType === 'house_rent') typeAmharic = 'የሚከራይ ቤት';
+
+  const pName = `የቀረበ ${typeAmharic} (${session.tipArea} ካሬ)`;
+  // ዳታቤዝ ውስጥ አይነት መለያውን በ description መጨረሻ ላይ እናስቀምጠዋለን
+  const pDesc = `የጠቋሚ ስም: ${session.tipName} | ስፋት: ${session.tipArea} m² || टाइप:${session.tipFinalType}`;
+  
+  const tipAlert = `📌 አዲስ የቤት/መሬት ጥቆማ በደንበኛ ገብቷል! 📌\n\n🗂 አይነት: ${typeAmharic}\n👤 የጠቋሚ ስም: ${session.tipName}\n📞 ስልክ ቁጥር: ${session.tipPhone}\n📍 ቦታ/አድራሻ: ${session.tipAddress}\n📐 ስፋት: ${session.tipArea} m²\n💰 ዋጋ: ${session.tipPrice} ብር\n📱 ቴሌግራም: ${username}`;
+
+  try {
+    await supabase.from('customer_products').insert([
+      { 
+        name: pName, 
+        price: session.tipPrice, 
+        category: finalCat, 
+        description: pDesc, 
+        shop_name_address: session.tipAddress, 
+        phone: session.tipPhone,
+        image_url: defaultImg
+      }
+    ]);
+
+    await bot.telegram.sendMessage(ADMIN_CHAT_ID, `[የአስተዳዳሪ ማሳወቂያ]\n${tipAlert}`);
+    autoBroadcastNewProduct(pName, finalCat, session.tipPrice);
+
+    await ctx.editMessageText(`🎉 እናመሰግናለን! የጥቆማ መረጃዎ በተሳካ ሁኔታ እንደ *[${typeAmharic}]* ተመዝግቧል። አሁን ሌሎች ደንበኞች "👥 በደንበኞች የተጨመሩ" -> "🗺 መሬት/ቤት" ውስጥ በቀጥታ መመልከት ይችላሉ።`);
+  } catch (err) { 
+    await ctx.reply('❌ ጥቆማውን መመዝገብ አልተቻለም። እባክዎ ድጋሚ ይሞክሩ።', mainKeyboard); 
+  }
+  delete userSessions[ctx.from.id];
+}
+
 // --- 📢 ሁለቱንም አማራጭ በአንድ ላይ የያዘ የተስተካከለ የብሮድካስት ኮማንድ ---
 bot.command('broadcast', async (ctx) => {
-  if (ctx.from.id !== ADMIN_CHAT_ID) return; // አንተ መሆንህን ያረጋግጣል
+  if (ctx.from.id !== ADMIN_CHAT_ID) return; 
   
-  // ከ /broadcast ቀጥሎ የጻፍከውን ሙሉ ጽሑፍ ይወስዳል
   const inputText = ctx.message.text.replace('/broadcast', '').trim();
   
   if (!inputText) {
     return ctx.reply(
       '⚠️ *እባክህ መልዕክት አስገባ!*\n\n' +
       '💡 *አጠቃቀም፦*\n' +
-      '1️⃣ *ለምድብ ማስታወቂያ (በTemplate)፦* `/broadcast አልባሳት` ወይም `/broadcast ጫማዎች`\n' +
-      '2️⃣ *ለነፃ ጽሑፍ (ያለTemplate)፦* `/broadcast ነገ ሁሉም ደንበኞች የፈለጉትን ምርት...`', 
+      '1️⃣ *ለምድብ ማስታወቂያ (በTemplate)፦* `/broadcast አልባሳት`\n' +
+      '2️⃣ *ለነፃ ጽሑፍ (ያለTemplate)፦* `/broadcast ነገ ሁሉም ደንበኞች...`', 
       { parse_mode: 'Markdown' }
     );
   }
   
   let finalMessage = '';
-
-  // 🔍 ማጣሪያ፦ የጻፍከው ጽሑፍ ክፍተት (Space) ከሌለው እና ከ 15 ፊደል ካነሰ ብቻ እንደ ምድብ ይቆጠራል
   if (!inputText.includes(' ') && inputText.length <= 7) {
     finalMessage = `🔔 *አዲስ ምርት ወጥቷል!* 🔔\n\nSiralink Market ላይ በ *${inputText}* ምድብ ስር አዳዲስ ምርቶች አሁን ገብተዋል። ቦቱ ላይ በመግባት አሁኑኑ ይመልከቱ! 🛍✨`;
-  } 
-  // 📝 ካለበለዚያ ግን (ረጅም ጽሑፍ ወይም ከአንድ ቃል በላይ ከሆነ) የጻፍከውን እንዳለ ይወስደዋል
-  else {
+  } else {
     finalMessage = inputText;
   }
   
   try {
-    // ሁሉንም የቦቱን ተጠቃሚዎች ከ Supabase ያወጣል
     const { data: users, error } = await supabase.from('bot_users').select('chat_id');
-    if (error || !users || users.length === 0) return ctx.reply('📢 መልዕክት የሚላክላቸው ተጠቃሚዎች በዳታቤዝ ውስጥ አልተገኙም።');
+    if (error || !users || users.length === 0) return ctx.reply('📢 መልዕክት የሚላክላቸው ተጠቃሚዎች አልተገኙም።');
     
     let successCount = 0;
-    
-    // ለአንድ በአንድ ለሁሉም ይልካል
     for (let u of users) { 
       try { 
         await bot.telegram.sendMessage(u.chat_id, finalMessage, { parse_mode: 'Markdown' }); 
         successCount++;
-      } catch (e) {
-        // ቦቱን Block ላደረጉ ሰዎች ስህተት እንዳይሰጥ
-      } 
+      } catch (e) {} 
     }
     ctx.reply(`✅ 📢 መልዕክቱ በተሳካ ሁኔታ ለ ${successCount} ተጠቃሚዎች ተላልፏል!`);
   } catch (err) { 
     ctx.reply('❌ መልዕክቱን በማስተላለፍ ላይ የቴክኒክ ስህተት አጋጥሟል።'); 
   }
 });
+
 // ==========================================
 // 🛒 የሱቆች መጋዘን እቃ ማዘዣ መጀመሪያ
 // ==========================================
@@ -634,7 +694,6 @@ bot.action(/^order_cust_choice_(.+)$/, async (ctx) => {
   } catch (err) { console.error(err); }
 });
 
-// 🏪 በቦታው ሄደው መረከብ (Pickup) ሲመርጡ
 bot.action(/^choose_pickup_(.+)$/, async (ctx) => {
   const session = userSessions[ctx.from.id];
   await ctx.answerCbQuery();
@@ -644,10 +703,8 @@ bot.action(/^choose_pickup_(.+)$/, async (ctx) => {
   const prod = session.product;
   const customerUser = ctx.from.username ? `@${ctx.from.username}` : 'የለውም';
   
-  // ለገዢው የሚላክ መረጃ
   const pickupGuide = `🎉 ትዕዛዝዎ በትክክል ደርሷል!\n\n🏪 በቦታው ሄደው ዕቃውን ለመረከብ ስለመረጡ እናመሰግናለን። ባለቤቱን ለማግኘት የሚከተለውን መረጃ ይጠቀሙ፦\n\n🏢 የሱቅ/ባለቤት ስም: ${prod.description ? prod.description.substring(0, 50) : 'Siralink Vendor'}\n📍 አድራሻ: ${prod.shop_name_address || 'በቦቱ ላይ የተገለጸው'}\n📞 ስልክ ቁጥር: ${prod.phone || 'የለውም'}\n\nዕቃውን ለመረከብ ሲሄዱ ይህንን መልዕክት ማሳየት ይችላሉ። መልካም ግብይት! ✨`;
   
-  // ለአስተዳዳሪው የሚላክ መረጃ
   const alertMessage = `🏪 አዲስ የዕቃ ትዕዛዝ (Pickup) ደርሷል! 🏪\n\n🆔 የምርት መለያ: #${prod.id}\n📦 ዕቃ: ${prod.name}\n💰 ዋጋ: ${prod.price} ብር\n🚚 የአቅርቦት ሁኔታ: Pickup (በቦታው ሄዶ የሚረከብ)\n\n👤 ገዢ: ${ctx.from.first_name}\n📱 ቴሌግራም: ${customerUser}`;
   
   try {
@@ -663,7 +720,6 @@ bot.action(/^choose_pickup_(.+)$/, async (ctx) => {
   delete userSessions[ctx.from.id];
 });
 
-// 🚚 ባሉበት ሆኖ እንዲመጣላቸው (Delivery) ሲመርጡ
 bot.action(/^choose_delivery_(.+)$/, async (ctx) => {
   const session = userSessions[ctx.from.id];
   await ctx.answerCbQuery();
