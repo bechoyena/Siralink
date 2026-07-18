@@ -89,7 +89,10 @@ bot.hears('🛍 አዳዲስ ዕቃዎች', (ctx) => ctx.reply('🛍 የሱቆ�
 const shopItems = ['👗 የሴቶች ልብስ', '👕 የወንዶች ልብስ', '👟 ጫማዎች', '🔌 ኤሌክትሮንክስ', '🛍 የቤት ዕቃዎች'];
 bot.hears(shopItems, async (ctx, next) => {
   const session = userSessions[ctx.from.id];
-  if (session && (session.step === 'ADD_PROD_CAT' || session.step === 'CONFIRM_CAT')) return next();
+  // 🟢 ማስተካከያ 1፦ አዲስ ዕቃ በሚጨምርበት ጊዜ ይህ hears እንዳያስተጓጉለው
+  if (session && (session.step === 'ADD_PROD_CAT' || session.step === 'CONFIRM_CAT')) {
+    return next();
+  }
 
   const clickedText = ctx.message.text.trim();
   let category = clickedText;
@@ -156,10 +159,8 @@ bot.hears('📌 የቤት/የመሬት ጥቆማ', (ctx) => {
 // ==========================================
 bot.hears('🔄 ያገለገሉ ዕቃዎችን ይግዙ/ይሽጡ', (ctx) => ctx.reply('🔄 ያገለገሉ ዕቃዎች ማዕከል፦', usedKeyboard));
 
-// 3.1 ዕቃዎችን እይ (አዲሚኑ በ supabase የጨመረው ብቻ - ከ 'admin_used_products' ወይም ከ 'products' በልዩ ታግ መሳብ ይቻላል)
 bot.hears('📦 ዕቃዎችን እይ', async (ctx) => {
   try {
-    // እዚህ ላይ በአስተዳዳሪው ብቻ የተመዘገቡትን ያገለገሉ ዕቃዎች ይስባል (category='አስተዳዳሪ ያገለገሉ' ብለን በ products ሰንጠረዥ ላይ እንለያቸዋለን)
     const { data: dbUsed } = await supabase.from('products').select('*').eq('category', 'አስተዳዳሪ ያገለገሉ');
     if (!dbUsed || dbUsed.length === 0) return ctx.reply('በአሁኑ ሰዓት በአስተዳዳሪው የተጫነ ያገለገለ ዕቃ የለም።', usedKeyboard);
     
@@ -206,11 +207,9 @@ bot.hears(customerCategories, async (ctx) => {
       const txt = `📦 *${displayTitle}*\n💰 ዋጋ/ኪራይ: ${item.price} ብር\nℹ️ መግለጫ: ${cleanDesc}\n🏢 አድራሻ: ${item.shop_name_address || 'የለውም'}\n📞 ስልክ: ${item.phone || 'የለውም'}`;
       
       let inlineBtn;
-      // 🗺 መሬት/ቤት (4.4) ከሆነ የተለየ የጥቆማ ትዕዛዝ ሎጂክ ይጠቀማል
       if (clickedText === '🗺 መሬት/ቤት') {
         inlineBtn = Markup.inlineKeyboard([[Markup.button.callback('🔑 ለመግዛት/ለመከራየት', `order_realestate_cust_${item.id}`)]]);
       } else {
-        // 4.1, 4.2, 4.3, 4.5 ከሆኑ መደበኛ የ Delivery/Pickup ምርጫ ያመጣል
         inlineBtn = Markup.inlineKeyboard([[Markup.button.callback('🛒 አሁን ይዘዙ (Order)', `order_general_cust_${item.id}`)]]);
       }
       
@@ -223,12 +222,9 @@ bot.hears(customerCategories, async (ctx) => {
 });
 
 // ==========================================
-// ℹ️ ስለ እኛ ክፍል እና ንዑስ አዝራሮች (HTML ተጠቅሟል)
+// ℹ️ ስለ እኛ ክፍል
 // ==========================================
-
-bot.hears('ℹ️ ስለ እኛ', (ctx) => {
-  return ctx.reply('ℹ️ ስለ Siralink Market ማወቅ የሚፈልጉትን መረጃ ከታች ይምረጡ፦', aboutKeyboard);
-});
+bot.hears('ℹ️ ስለ እኛ', (ctx) => ctx.reply('ℹ️ ስለ Siralink Market ማወቅ የሚፈልጉትን መረጃ ከታች ይምረጡ፦', aboutKeyboard));
 
 bot.hears('🛠 የምንሰጣቸው አገልግሎቶች', (ctx) => {
   const serviceText = `<b>🛍 ስለ Siralink Market ሁለገብ ገበያ</b>\n\n` +
@@ -294,11 +290,9 @@ bot.on(['text', 'photo'], async (ctx, next) => {
     const alertMessage = `🚚 [አዲስ የደሊቨሪ ትዕዛዝ] 🚚\n\n📦 ዕቃ: ${prod.name}\n💰 ዋጋ: ${prod.price} ብር\n👤 የደንበኛ ስም: ${session.name}\n📞 ስልክ ቁጥር: ${session.phone}\n📍 አድራሻ: ${session.address}\n📱 ቴሌግራም: ${customerUser}`;
     
     try {
-      // ለዕቃው ባለቤት/ባለሱቅ መልዕክት መላክ (ካለ)
       if (prod.shop_owner_id && !isNaN(prod.shop_owner_id) && Number(prod.shop_owner_id) !== 0) {
         try { await bot.telegram.sendMessage(Number(prod.shop_owner_id), alertMessage); } catch (e) {}
       }
-      // ለአዲሚኑ የግድ ይላካል
       await bot.telegram.sendMessage(ADMIN_CHAT_ID, `[የትዕዛዝ መቆጣጠሪያ ኮፒ]\n${alertMessage}`);
       await ctx.reply('🎉 ማረጋገጫ: የደሊቨሪ ትዕዛዝዎ በተሳካ ሁኔታ ተመዝግቧል! በቅርቡ እናገኝዎታለን።', mainKeyboard);
     } catch (err) { await ctx.reply('❌ ትዕዛዙን ማስተላለፍ ላይ ችግር አጋጥሟል።', mainKeyboard); }
@@ -306,7 +300,7 @@ bot.on(['text', 'photo'], async (ctx, next) => {
     return;
   }
 
-  // --- 🔄 ያገለገለ እቃ መሸጫ (3.2 የእርስዎን ጨምር) ---
+  // --- 🔄 ያገለገለ እቃ መሸጫ ---
   if (session.step === 'ASK_SELL_NAME') {
     session.sellName = text;
     session.step = 'ASK_SELL_PRICE';
@@ -335,7 +329,7 @@ bot.on(['text', 'photo'], async (ctx, next) => {
     return;
   }
 
-  // --- 📌 የቤት/መሬት ጥቆማ መቀበያ ፎርም (2.5) ---
+  // --- 📌 የቤት/መሬት ጥቆማ መቀበያ ፎርም ---
   if (session.step === 'TIP_NAME') {
     session.tipName = text;
     session.step = 'TIP_PHONE';
@@ -394,14 +388,16 @@ bot.on(['text', 'photo'], async (ctx, next) => {
     const inlineConfirm = Markup.inlineKeyboard([[Markup.button.callback('✅ አረጋግጥ', 'confirm_cat_yes'), Markup.button.callback('❌ ቀይር', 'confirm_cat_no')]]);
     return ctx.reply(`የመረጡት ምድብ፡ *${text}* ነው። እርግጠኛ ነዎት?`, inlineConfirm);
   }
+  
+  // 🟢 ማስተካከያ 2፦ የነበረውን የ ADD_PROD_ADDRESS ስቴፕ እዚህ ጋር በትክክል ጨምሬዋለሁ
   if (session.step === 'ADD_PROD_ADDRESS') {
     session.addProdAddress = text;
     session.step = 'ADD_PROD_PHONE';
-    return ctx.reply('🏢 እሺ፣ ቀጥለው *የድርጅቱን/የሽያጩን ስም እና መገኛ አድራሻ* ይጻፉልኝ፦');
+    return ctx.reply('📞 በመጨረሻም ደንበኞች እንዲያገኙዎት *የስልክ ቁጥርዎን* ያስገቡ፦');
   }
+  
   if (session.step === 'ADD_PROD_PHONE') {
     session.addProdPhone = text;
-    const username = ctx.from.username ? `@${ctx.from.username}` : 'የለውም';
     
     let targetCustomerCategory = '👔 አልባሳትና ጫማ';
     if (session.tempCat === '🛍 የቤት ዕቃዎች') targetCustomerCategory = '🛋 የቤት ዕቃዎች ምድብ';
@@ -439,10 +435,8 @@ bot.action('confirm_cat_no', async (ctx) => {
 });
 
 // ==========================================
-// 🛎 INLINE BUTTON ACTIONS FOR ORDERS (ትዕዛዞች መቆጣጠሪያ)
+// 🛎 INLINE BUTTON ACTIONS FOR ORDERS
 // ==========================================
-
-// ሀ. ለመደበኛ ዕቃዎች ማዘዣ (1.1-1.5, 3.1, 4.1, 4.2, 4.3, 4.5) -> Delivery/Pickup ያመጣል
 bot.action(/^order_general_(products|cust)_(.+)$/, async (ctx) => {
   const table = ctx.match[1] === 'products' ? 'products' : 'customer_products';
   const productId = ctx.match[2];
@@ -490,7 +484,7 @@ bot.action(/^btn_pickup_(.+)$/, async (ctx) => {
   delete userSessions[ctx.from.id];
 });
 
-// ለ. ለቤት/መሬት ግዢና ኪራይ ማዘዣ (2.1-2.4 እና 4.4)
+// ለ. ለቤት/መሬት ግዢና ኪራይ ማዘዣ
 bot.action(/^order_realestate_(house|cust)_(.+)$/, async (ctx) => {
   const type = ctx.match[1];
   const id = ctx.match[2];
@@ -501,7 +495,6 @@ bot.action(/^order_realestate_(house|cust)_(.+)$/, async (ctx) => {
     const buyerUser = ctx.from.username ? `@${ctx.from.username}` : 'የለውም';
 
     if (type === 'cust') {
-      // 4.4 በደንበኛ የተጠቆመ መሬት/ቤት ከሆነ
       const { data } = await supabase.from('customer_products').select('*').eq('id', id).single();
       if (!data) return ctx.reply('❌ መረጃው አልተገኘም!');
       prod = data;
@@ -509,12 +502,10 @@ bot.action(/^order_realestate_(house|cust)_(.+)$/, async (ctx) => {
       alertMessage = `📌 [የቤት/መሬት ጥቆማ ግዢ ፍላጎት] 📌\n\nየተጠቆመው ዕቃ፡ ${prod.name}\nዋጋ፡ ${prod.price} ብር\n\n👤 ፈላጊ ደንበኛ፡ ${ctx.from.first_name} (${buyerUser})`;
       userGuide = `🎉 ለመግዛት/ለመከራየት ስላሳዩት ፍላጎት እናመሰግናለን!\n\nይህ መረጃ የጥቆማ መረጃ በመሆኑ የጠቋሚውን አድራሻና ስልክ ቁጥር በመጠቀም በቀጥታ ማግኘት ይችላሉ፦\n\n📞 ስልክ ቁጥር: ${prod.phone}\n🏢 መገኛ አድራሻ: ${prod.shop_name_address}`;
       
-      // ጥቆማውን ላቀረበው ደንበኛ መልዕክት መላክ (የቴሌግራም chat_id ካለው በፎርሙ ላይ)
       if (prod.owner_chat_id) {
         try { await bot.telegram.sendMessage(Number(prod.owner_chat_id), `🔔 ማሳወቂያ፡ ለእርስዎ የቤት/መሬት ጥቆማ ግዢ ፈላጊ ደንበኛ መጥቷል!`); } catch(e){}
       }
     } else {
-      // 2.1 - 2.4 አንተ በ Supabase ያስቀመጥከው ከሆነ
       const { data } = await supabase.from('houses').select('*').eq('id', id).single();
       if (!data) return ctx.reply('❌ መረጃው አልተገኘም!');
       prod = data;
@@ -522,19 +513,17 @@ bot.action(/^order_realestate_(house|cust)_(.+)$/, async (ctx) => {
       alertMessage = `🏢 [በአስተዳዳሪው ለተመዘገበ ቤት/መሬት የትዕዛዝ ፍላጎት] 🏢\n\nቤት/መሬት፡ ${prod.name}\nዋጋ፡ ${prod.price} ብር\n👤 ፈላጊ ደንበኛ፡ ${ctx.from.first_name} (${buyerUser})`;
       userGuide = `🎉 የቤት/መሬት ግዥ/ኪራይ ፍላጎትዎ በተሳካ ሁኔታ ደርሶናል። የቤቱ/መሬቱ ባለቤት መረጃ ለማግኘት በሚከተለው ስልክ ይደውሉ፦\n\n📞 ስልክ ቁጥር፡ ${prod.phone || '0946662487'}`;
       
-      // ለቤቱ/መሬቱ ባለቤት መላክ (ካለ)
       if (prod.owner_chat_id) {
         try { await bot.telegram.sendMessage(Number(prod.owner_chat_id), `🔔 ማሳወቂያ፡ በሲራሊንክ ያስመዘገቡትን ቤት/መሬት የሚፈልግ ደንበኛ መጥቷል!`); } catch(e){}
       }
     }
     
-    // ለአዲሚኑ ኮፒ መላክ
     await bot.telegram.sendMessage(ADMIN_CHAT_ID, `[የሪልስቴት ትዕዛዝ መቆጣጠሪያ]\n${alertMessage}`);
     await ctx.reply(userGuide, mainKeyboard);
   } catch (err) { console.error(err); }
 });
 
-// --- የጥቆማ የውስጥ አዝራሮች መቆጣጠሪያ (2.5.1 እና 2.5.2) ---
+// --- የጥቆማ የውስጥ አዝራሮች መቆጣጠሪያ ---
 bot.action('tip_type_land', async (ctx) => {
   const session = userSessions[ctx.from.id];
   if (!session || session.step !== 'CHOOSE_TIP_TYPE') return ctx.answerCbQuery();
