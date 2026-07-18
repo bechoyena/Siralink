@@ -6,7 +6,9 @@ const bot = new Telegraf('8577893575:AAE0YpDFrK8GgYBP46uqTRsdM6zGkpec1kU');
 const ADMIN_CHAT_ID = 5406168929;
 
 const SUPABASE_URL = 'https://gyooossgagycyeyffjfr.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5b29vc3NnYWd5Y3lleWZmamZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5Mzk5ODgsImV4cCI6MjA5ODUxNTk4OH0.k85DGyIEU_wEzZhE6Qbo-ssiXbhT2gR69SH7KVOZ4NY';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5b29vc3NnYWd5Y3lleWZmamZyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MjkzOTk4OCwiZXhwIjoyMDk4NTE1OTg4fQ.QxGS6jnPOrIgFWsQZO78P3r3MplUy9nj0c5YLMLVxGA';
+
+
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const userSessions = {};
@@ -87,9 +89,11 @@ const aboutKeyboard = Markup.keyboard([
 bot.hears('🛍 አዳዲስ ዕቃዎች', (ctx) => ctx.reply('🛍 የሱቆች መጋዘን ምድብ ይምረጡ፦', shopKeyboard));
 
 const shopItems = ['👗 የሴቶች ልብስ', '👕 የወንዶች ልብስ', '👟 ጫማዎች', '🔌 ኤሌክትሮንክስ', '🛍 የቤት ዕቃዎች'];
+
 bot.hears(shopItems, async (ctx, next) => {
   const session = userSessions[ctx.from.id];
-  // 🟢 ማስተካከያ 1፦ አዲስ ዕቃ በሚጨምርበት ጊዜ ይህ hears እንዳያስተጓጉለው
+  
+  // 🔥 ዋናው ማስተካከያ፦ ተጠቃሚው በምዝገባ ስቴፕ ላይ ከሆነ የሱቆችን ዕቃ ዝርዝር አያምጣ፤ ወደ ፎርሙ ያሳልፈው!
   if (session && (session.step === 'ADD_PROD_CAT' || session.step === 'CONFIRM_CAT')) {
     return next();
   }
@@ -101,7 +105,9 @@ bot.hears(shopItems, async (ctx, next) => {
 
   try {
     const { data: dbProducts } = await supabase.from('products').select('*').eq('category', category);
-    if (!dbProducts || dbProducts.length === 0) return ctx.reply(`በዚህ ምድብ (${clickedText}) ውስጥ በአሁኑ ሰዓት ዕቃ አልተመዘገበም።`, shopKeyboard);
+    if (!dbProducts || dbProducts.length === 0) {
+      return ctx.reply(`በዚህ ምድብ (${clickedText}) ውስጥ በአሁኑ ሰዓት ዕቃ አልተመዘገበም።`, shopKeyboard);
+    }
     
     for (let item of dbProducts) {
       const txt = `🛍 *${item.name}*\n💰 ዋጋ: ${item.price} ብር\nℹ️ መግለጫ: ${item.description || 'የለውም'}\n🏢 አድራሻ: ${item.shop_name_address || 'የለውም'}\n📞 ስልክ: ${item.phone || 'የለውም'}`;
@@ -109,9 +115,13 @@ bot.hears(shopItems, async (ctx, next) => {
       if (item.image_url) {
         try { await ctx.replyWithPhoto(item.image_url, { caption: txt, parse_mode: 'Markdown', ...inlineBtn }); }
         catch { await ctx.reply(txt, { parse_mode: 'Markdown', ...inlineBtn }); }
-      } else { await ctx.reply(txt, { parse_mode: 'Markdown', ...inlineBtn }); }
+      } else { 
+        await ctx.reply(txt, { parse_mode: 'Markdown', ...inlineBtn }); 
+      }
     }
-  } catch (err) { await ctx.reply('መረጃዎችን ማግኘት አልተቻለም።', shopKeyboard); }
+  } catch (err) { 
+    await ctx.reply('መረጃዎችን ማግኘት አልተቻለም።', shopKeyboard); 
+  }
 });
 
 bot.hears('➕ አዲስ ዕቃ ጨምር', (ctx) => {
@@ -244,8 +254,8 @@ bot.hears('📞 እኛን ያግኙ', (ctx) => {
                       `<b>📍 አድራሻ፦</b> ሀዋሳ፣ ኢትዮጵያ\n\n` +
                       `<b>📢 የቴሌግራም ቻናል፦</b> <a href="https://t.me/SiralinkMarket">Siralink Market Channel</a>\n\n` +
                       `<b>👤 የአስተዳዳሪዎች (Admins) አድራሻ፦</b>\n` +
-                      `• @ad\\_is17\n` +
-                      `• @ad\\_is1`;
+                      `• @ad\_is17\n` +
+                      `• @ad\_is1`;
   return ctx.replyWithHTML(contactText, aboutKeyboard);
 });
 
@@ -376,26 +386,30 @@ bot.on(['text', 'photo'], async (ctx, next) => {
     session.step = 'ADD_PROD_PHOTO';
     return ctx.reply('📸 ምርቱ *ፎቶ ካለው* አሁን ይላኩ፤ ከሌለው *ፎቶ የለም* ብለው ይጻፉ፦');
   }
-  if (session.step === 'ADD_PROD_PHOTO') {
+if (session.step === 'ADD_PROD_PHOTO') {
     session.addProdPhoto = (!photoId || text.toLowerCase().includes('የለም')) ? '' : photoId;
     session.step = 'ADD_PROD_CAT';
-    return ctx.reply('🗂 ይህ ምርት በየትኛው *የዕቃ ካታጎሪ* ውስጥ እንዲመደብ ይፈልጋሉ? ከታች ይምረጡ፦', selectCatKeyboard);
-  }
-  if (session.step === 'ADD_PROD_CAT') {
-    if (!shopItems.includes(text)) return ctx.reply('⚠️ እባክዎ ከታች ካሉት ቁልፎች አንዱን ብቻ ይጫኑ፦', selectCatKeyboard);
-    session.tempCat = text;
-    session.step = 'CONFIRM_CAT';
-    const inlineConfirm = Markup.inlineKeyboard([[Markup.button.callback('✅ አረጋግጥ', 'confirm_cat_yes'), Markup.button.callback('❌ ቀይር', 'confirm_cat_no')]]);
-    return ctx.reply(`የመረጡት ምድብ፡ *${text}* ነው። እርግጠኛ ነዎት?`, inlineConfirm);
+    return ctx.reply('🗂 ይህ ምርት በየትኛው *የዕቃ ካታጎሪ* ውስጥ እንዲመደብ ይፈልጋሉ? ከታች ካለው ማውጫ ይምረጡ፦', selectCatKeyboard);
   }
   
-  // 🟢 ማስተካከያ 2፦ የነበረውን የ ADD_PROD_ADDRESS ስቴፕ እዚህ ጋር በትክክል ጨምሬዋለሁ
+  if (session.step === 'ADD_PROD_CAT') {
+    if (!shopItems.includes(text)) {
+      return ctx.reply('⚠️ እባክዎ ከታች ካሉት ማውጫዎች (ቁልፎች) አንዱን ብቻ ይጫኑ፦', selectCatKeyboard);
+    }
+    session.tempCat = text;
+    session.step = 'CONFIRM_CAT';
+    const inlineConfirm = Markup.inlineKeyboard([
+      [Markup.button.callback('✅ አረጋግጥ', 'confirm_cat_yes'), Markup.button.callback('❌ ቀይር', 'confirm_cat_no')]
+    ]);
+    return ctx.reply(`የመረጡት ምድብ፦ *${text}* ነው። እርግጠኛ ነዎት?`, inlineConfirm);
+  }
+  
   if (session.step === 'ADD_PROD_ADDRESS') {
     session.addProdAddress = text;
     session.step = 'ADD_PROD_PHONE';
     return ctx.reply('📞 በመጨረሻም ደንበኞች እንዲያገኙዎት *የስልክ ቁጥርዎን* ያስገቡ፦');
   }
-  
+
   if (session.step === 'ADD_PROD_PHONE') {
     session.addProdPhone = text;
     
