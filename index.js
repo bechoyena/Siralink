@@ -76,16 +76,10 @@ const selectCatKeyboard = Markup.keyboard([
   ['🛍 የቤት ዕቃዎች']
 ]).resize();
 
-bot.start(async (ctx) => {
-  if(userSessions[ctx.from.id]) delete userSessions[ctx.from.id];
-  try { await supabase.from('bot_users').insert([{ chat_id: ctx.from.id }], { upsert: true }); } catch (err) {}
-  return ctx.reply('እንኳን ወደ Siralink መተግበሪያ ማውጫ በሰላም መጡ! 👋', mainKeyboard);
-});
-
-bot.hears('🔙 ወደ ዋናው ማውጫ', (ctx) => {
-  if(userSessions[ctx.from.id]) delete userSessions[ctx.from.id];
-  return ctx.reply('ወደ ዋናው ማውጫ ተመልሰዋል።', mainKeyboard);
-});
+const aboutKeyboard = Markup.keyboard([
+  ['🛠 የምንሰጣቸው አገልግሎቶች', '📞 እኛን ያግኙ'],
+  ['🔙 ወደ ዋናው ማውጫ']
+]).resize();
 
 // ==========================================
 // 1. 🛍 አዳዲስ ዕቃዎች (የሱቆች መጋዘን)
@@ -226,6 +220,48 @@ bot.hears(customerCategories, async (ctx) => {
       } else { await ctx.reply(txt, { parse_mode: 'Markdown', ...inlineBtn }); }
     }
   } catch (err) { await ctx.reply('መረጃውን ማግኘት አልተቻለም።', customerCatKeyboard); }
+});
+
+// ==========================================
+// ℹ️ ስለ እኛ ክፍል እና ንዑስ አዝራሮች (HTML ተጠቅሟል)
+// ==========================================
+
+bot.hears('ℹ️ ስለ እኛ', (ctx) => {
+  return ctx.reply('ℹ️ ስለ Siralink Market ማወቅ የሚፈልጉትን መረጃ ከታች ይምረጡ፦', aboutKeyboard);
+});
+
+bot.hears('🛠 የምንሰጣቸው አገልግሎቶች', (ctx) => {
+  const serviceText = `<b>🛍 ስለ Siralink Market ሁለገብ ገበያ</b>\n\n` +
+                      `Siralink Market ነጋዴዎችን፣ ሸማቾችን፣ ያገለገሉ ዕቃ ሻጮችን እንዲሁም የቤትና መሬት አቅራቢዎችን ያለምንም መካከለኛ ደላላ በቀጥታ የሚያገናኝ ዘመናዊ መድረክ ነው።\n\n` +
+                      `<b>✨ ዋና ዓላማችንና ጥቅሞች፦</b>\n` +
+                      `• <b>ቀጥታ ግንኙነት፦</b> ደንበኞች ከባለሱቆችና ከጠቋሚዎች ጋር በቀጥታ በስልክና በደሊቨሪ እንዲገናኙ ያደርጋል።\n` +
+                      `• <b>ቀላል ምዝገባ፦</b> ማንኛውም ደንበኛ አዳዲስ እቃዎችን፣ ያገለገሉ ቁሳቁሶችን እንዲሁም የቤት/መሬት ጥቆማዎችን በነፃ ማስገባት ይችላል።\n` +
+                      `• <b>ፈጣን ትዕዛዝ፦</b> የደሊቨሪ (የማድረስ) እና የፒክአፕ (በቦታው ሄዶ የመረከብ) አማራጮችን በማቅረብ ግብይቱን ያቀልጣል።`;
+  return ctx.replyWithHTML(serviceText, aboutKeyboard);
+});
+
+bot.hears('📞 እኛን ያግኙ', (ctx) => {
+  const contactText = `<b>📞 እኛን ለማግኘት የሚከተሉትን አድራሻዎች ይጠቀሙ፦</b>\n\n` +
+                      `<b>📱 ስልክ ቁጥሮች፦</b>\n` +
+                      `• 0946662487\n` +
+                      `• 0701404704\n\n` +
+                      `<b>📍 አድራሻ፦</b> ሀዋሳ፣ ኢትዮጵያ\n\n` +
+                      `<b>📢 የቴሌግራም ቻናል፦</b> <a href="https://t.me/SiralinkMarket">Siralink Market Channel</a>\n\n` +
+                      `<b>👤 የአስተዳዳሪዎች (Admins) አድራሻ፦</b>\n` +
+                      `• @ad\\_is17\n` +
+                      `• @ad\\_is1`;
+  return ctx.replyWithHTML(contactText, aboutKeyboard);
+});
+
+bot.start(async (ctx) => {
+  if(userSessions[ctx.from.id]) delete userSessions[ctx.from.id];
+  try { await supabase.from('bot_users').insert([{ chat_id: ctx.from.id }], { upsert: true }); } catch (err) {}
+  return ctx.reply('እንኳን ወደ Siralink መተግበሪያ ማውጫ በሰላም መጡ! 👋', mainKeyboard);
+});
+
+bot.hears('🔙 ወደ ዋናው ማውጫ', (ctx) => {
+  if(userSessions[ctx.from.id]) delete userSessions[ctx.from.id];
+  return ctx.reply('ወደ ዋናው ማውጫ ተመልሰዋል።', mainKeyboard);
 });
 
 // ==========================================
