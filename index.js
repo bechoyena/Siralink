@@ -6,7 +6,7 @@ const bot = new Telegraf('8577893575:AAE0YpDFrK8GgYBP46uqTRsdM6zGkpec1kU');
 const ADMIN_CHAT_ID = 5406168929;
 
 const SUPABASE_URL = 'https://gyooossgagycyeyffjfr.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5b29vc3NnYWd5Y3lleWZmamZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5Mzk5ODgsImV4cCI6MjA5ODUxNTk4OH0.k85DGyIEU_wEzZhE6Qbo-ssiXbhT2gR69SH7KVOZ4NY';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5b29vc3NnYWd5Y3lleWZmamZyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MjkzOTk4OCwiZXhwIjoyMDk4NTE1OTg4fQ.QxGS6jnPOrIgFWsQZO78P3r3MplUy9nj0c5YLMLVxGA';
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const userSessions = {};
