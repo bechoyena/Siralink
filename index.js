@@ -2,7 +2,7 @@ const express = require('express');
 const { Telegraf, Markup } = require('telegraf');
 const { createClient } = require('@supabase/supabase-js');
 
-const bot = new Telegraf('8577893575:AAHXS2Zg4kGv0ryY9kzivzyNosRvF15N9Sg');
+const bot = new Telegraf('8305411169:AAExqY0Lvt1ief8o0MFmdQqNNfXCry6AoHw');
 const ADMIN_CHAT_ID = 5406168929;
 
 const SUPABASE_URL = 'https://gyooossgagycyeyffjfr.supabase.co';
