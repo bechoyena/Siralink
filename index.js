@@ -1,13 +1,16 @@
+const express = require("express");
+const axios = require("axios");
 const express = require('express');
 const { Telegraf, Markup } = require('telegraf');
-const { createClient } = require('@supabase/supabase-js');
+const { Pool } = require('pg');
 
 const bot = new Telegraf('8305411169:AAExqY0Lvt1ief8o0MFmdQqNNfXCry6AoHw');
 const ADMIN_CHAT_ID = 5406168929;
 
-const SUPABASE_URL = 'https://gyooossgagycyeyffjfr.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5b29vc3NnYWd5Y3lleWZmamZyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MjkzOTk4OCwiZXhwIjoyMDk4NTE1OTg4fQ.QxGS6jnPOrIgFWsQZO78P3r3MplUy9nj0c5YLMLVxGA';
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const pool = new Pool({
+  connectionString: 'postgresql://neondb_owner:npg_LAPJHko09eDS@ep-lingering-wave-aex6bd40-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require',
+  ssl: { rejectUnauthorized: false }
+});
 
 const userSessions = {};
 
@@ -30,7 +33,8 @@ function generateMatchedImage(productName, categoryName) {
 // 📢 አውቶማቲክ ብሮድካስት
 async function autoBroadcastNewProduct(prodName, catName, prodPrice) {
   try {
-    const { data: users } = await supabase.from('bot_users').select('chat_id');
+const res = await pool.query('SELECT chat_id FROM bot_users');
+const users = res.rows;
     if (!users || users.length === 0) return;
     const broadcastText = `🔔 *አዲስ ምርት በደንበኞች ማዕከል ገብቷል!* 🔔\n\n📦 *የምርት ስም:* ${prodName}\n💰 *ዋጋ:* ${prodPrice} ብር\n🗂 *ምድብ:* ${catName}\n\n"👥 በደንበኞች የተጨመሩ" ገጽ ውስጥ በመግባት መመልከት ይችላሉ! 🛍✨`;
     for (let u of users) {
@@ -102,7 +106,8 @@ bot.hears(shopItems, async (ctx, next) => {
   if (clickedText === '🛍 የቤት ዕቃዎች') category = 'የቤት ዕቃዎች';
 
   try {
-    const { data: dbProducts } = await supabase.from('products').select('*').eq('category', category);
+    const res = await pool.query('SELECT * FROM products WHERE category = $1', [category]);
+const dbProducts = res.rows; // አዲሱ መረጃ res.rows ውስጥ ነው የሚገኘው
     if (!dbProducts || dbProducts.length === 0) {
       return ctx.reply(`በዚህ ምድብ (${clickedText}) ውስጥ በአሁኑ ሰዓት ዕቃ አልተመዘገበም።`, shopKeyboard);
     }
@@ -326,9 +331,10 @@ bot.on(['text', 'photo'], async (ctx, next) => {
     const defaultImg = generateMatchedImage(session.sellName, finalCat);
     
     try {
-      await supabase.from('customer_products').insert([
-        { name: session.sellName, price: session.sellPrice, category: finalCat, description: `ያገለገለ ዕቃ | በባለቤቱ የተጫነ (${username})`, shop_name_address: 'በደንበኛ የቀረበ', phone: session.sellPhone, image_url: defaultImg }
-      ]);
+await pool.query(
+  'INSERT INTO customer_products (name, price, category, description, shop_name_address, phone, image_url, owner_chat_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+  [session.addProdName, session.addProdPrice, targetCustomerCategory, session.addProdDesc, session.addProdAddress, session.addProdPhone, session.addProdPhoto, ctx.from.id]
+);
       autoBroadcastNewProduct(session.sellName, finalCat, session.sellPrice);
       await bot.telegram.sendMessage(ADMIN_CHAT_ID, `🔄 ያገለገለ ዕቃ ምዝገባ፡ ${session.sellName}\nዋጋ፡ ${session.sellPrice} ብር\nስልክ፡ ${session.sellPhone}`);
       await ctx.reply('🎉 ያገለገለው ዕቃዎ በተሳካ ሁኔታ ተመዝግቧል! አሁን (4.5) ውስጥ ይታያል።', mainKeyboard);
@@ -599,7 +605,10 @@ bot.command('broadcast', async (ctx) => {
     : inputText;
   
   try {
-    const { data: users } = await supabase.from('bot_users').select('chat_id');
+    const { data: users } = await pool.query(
+  'INSERT INTO bot_users (chat_id) VALUES ($1) ON CONFLICT (chat_id) DO NOTHING',
+  [ctx.from.id]
+);
     if (!users || users.length === 0) return ctx.reply('📢 ተጠቃሚዎች አልተገኙም።');
     let successCount = 0;
     for (let u of users) { 
@@ -612,3 +621,16 @@ bot.command('broadcast', async (ctx) => {
 bot.launch({ polling: { dropPendingUpdates: true } })
   .then(() => console.log('Siralink Bot is Fully Active! 🚀'))
   .catch((err) => console.error(err));
+
+// Express Server ለ Render Health Check
+const app = express();
+const PORT = process.env.PORT || 10000;
+app.get('/', (req, res) => res.send('Siralink Bot is Live & Active! 🚀'));
+app.listen(PORT, '0.0.0.0', () => console.log(`Keep-Alive Web Server running on port ${PORT}`));
+
+// Self-Ping Mechanism (በየ 10 ደቂቃው Render እንዳይተኛ ያደርጋል)
+setInterval(() => {
+  axios.get('https://siralink-bot.onrender.com')
+    .then(() => console.log('Keep-alive ping sent successfully.'))
+    .catch((err) => console.error('Ping error:', err.message));
+}, 10 * 60 * 1000);

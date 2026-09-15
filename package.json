@@ -11,10 +11,9 @@
     "url": "git+https://github.com/adissfitret/Siralink.git"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.110.0",
-    "axios": "^1.18.1",
+    "axios": "^1.20.0",
     "express": "^5.2.1",
-    "pg": "^8.22.0",
+    "pg": "^8.23.0",
     "telegraf": "^4.16.3"
   }
 }
