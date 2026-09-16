@@ -1,6 +1,5 @@
 const express = require("express"); const axios = require("axios"); const app = express(); const PORT = process.env.PORT || 10000; app.get("/", (req, res) => res.send("Siralink Bot Active!")); app.listen(PORT, "0.0.0.0", () => console.log("Web Server running on port " + PORT)); setInterval(() => { axios.get("https://siralink-bot.onrender.com").catch(()=>{}); }, 10 * 60 * 1000);
 const app = express();
-app.get("/", (req, res) => res.send("Siralink Bot is Live!"));
 app.listen(PORT, "0.0.0.0", () => console.log("Server running on port " + PORT));
 setInterval(() => { axios.get("https://siralink-bot.onrender.com").catch(()=>{}); }, 10 * 60 * 1000);
 const { Telegraf, Markup } = require('telegraf');
@@ -623,6 +622,5 @@ bot.launch({ polling: { dropPendingUpdates: true } })
 // Express Server ለ Render Health Check
 
 // Self-Ping Mechanism (በየ 10 ደቂቃው Render እንዳይተኛ ያደርጋል)
-    .then(() => console.log('Keep-alive ping sent successfully.'))
     .catch((err) => console.error('Ping error:', err.message));
 }, 10 * 60 * 1000);
