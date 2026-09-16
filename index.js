@@ -1,11 +1,8 @@
-const express = require("express");
-const axios = require("axios");
+const express = require("express"); const axios = require("axios"); const app = express(); const PORT = process.env.PORT || 10000; app.get("/", (req, res) => res.send("Siralink Bot Active!")); app.listen(PORT, "0.0.0.0", () => console.log("Web Server running on port " + PORT)); setInterval(() => { axios.get("https://siralink-bot.onrender.com").catch(()=>{}); }, 10 * 60 * 1000);
 const app = express();
-const PORT = process.env.PORT || 10000;
 app.get("/", (req, res) => res.send("Siralink Bot is Live!"));
 app.listen(PORT, "0.0.0.0", () => console.log("Server running on port " + PORT));
 setInterval(() => { axios.get("https://siralink-bot.onrender.com").catch(()=>{}); }, 10 * 60 * 1000);
-const axios = require("axios");
 const { Telegraf, Markup } = require('telegraf');
 const { Pool } = require('pg');
 
