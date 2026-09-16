@@ -145,8 +145,8 @@ houseCategories.forEach(catKey => {
     if (catKey === '🏘 ሰርቪስ') dbCategory = 'ሰርቪስ';
 
     try {
-      const { data: dbHouses } = await supabase.from('houses').select('*').eq('category', dbCategory);
-      if (!dbHouses || dbHouses.length === 0) return ctx.reply('በዚህ ምድብ ውስጥ የተመዘገበ ቤት የለም።', houseKeyboard);
+     const res = await pool.query('SELECT * FROM houses WHERE category = $1', [dbCategory]);
+const dbHouses = res.rows;
       
       for (let item of dbHouses) {
         const txt = `🏠 *${item.name}*\n💰 ኪራይ/ዋጋ: ${item.price} ብር\nℹ️ መግለጫ: ${item.description || 'የለውም'}\n📞 ስልክ: ${item.phone || 'የለውም'}`;
@@ -172,8 +172,8 @@ bot.hears('🔄 ያገለገሉ ዕቃዎችን ይግዙ/ይሽጡ', (ctx) => c
 
 bot.hears('📦 ዕቃዎችን እይ', async (ctx) => {
   try {
-    const { data: dbUsed } = await supabase.from('products').select('*').eq('category', 'አስተዳዳሪ ያገለገሉ');
-    if (!dbUsed || dbUsed.length === 0) return ctx.reply('በአሁኑ ሰዓት በአስተዳዳሪው የተጫነ ያገለገለ ዕቃ የለም።', usedKeyboard);
+    const res = await pool.query('SELECT * FROM products WHERE category = $1', ['አስተዳዳሪ ያገለገሉ']);
+const dbUsed = res.rows;
     
     for (let item of dbUsed) {
       const txt = `🔄 *${item.name}*\n💰 ዋጋ: ${item.price} ብር\nℹ️ መግለጫ: ${item.description || 'የለውም'}\n📞 ስልክ: ${item.phone || 'የለውም'}`;
@@ -200,8 +200,8 @@ const customerCategories = ['👔 አልባሳትና ጫማ', '🛋 የቤት �
 bot.hears(customerCategories, async (ctx) => {
   const clickedText = ctx.message.text.trim();
   try {
-    const { data: items } = await supabase.from('customer_products').select('*').eq('category', clickedText);
-    if (!items || items.length === 0) return ctx.reply(`በዚህ ምድብ (${clickedText}) ውስጥ የተጫነ ዕቃ የለም።`, customerCatKeyboard);
+    const res = await pool.query('SELECT * FROM customer_products WHERE category = $1', [clickedText]);
+const items = res.rows;
     
     for (let item of items) {
       let displayTitle = item.name;
@@ -262,7 +262,7 @@ bot.hears('📞 እኛን ያግኙ', (ctx) => {
 
 bot.start(async (ctx) => {
   if(userSessions[ctx.from.id]) delete userSessions[ctx.from.id];
-  try { await supabase.from('bot_users').insert([{ chat_id: ctx.from.id }], { upsert: true }); } catch (err) {}
+  try {await pool.query('INSERT INTO bot_users (chat_id) VALUES ($1) ON CONFLICT (chat_id) DO NOTHING', [ctx.from.id]); ],
   return ctx.reply('እንኳን ወደ Siralink መተግበሪያ ማውጫ በሰላም መጡ! 👋', mainKeyboard);
 });
 
@@ -457,7 +457,8 @@ bot.action(/^order_general_(products|cust)_(.+)$/, async (ctx) => {
   const table = ctx.match[1] === 'products' ? 'products' : 'customer_products';
   const productId = ctx.match[2];
   try {
-    const { data } = await supabase.from(table).select('*').eq('id', productId).single();
+    const res = await pool.query(`SELECT * FROM ${table} WHERE id = $1`, [productId]);
+const data = res.rows[0];
     if (!data) return ctx.reply('❌ የዕቃው መረጃ አልተገኘም!');
     
     userSessions[ctx.from.id] = { product: data, tableType: table };
@@ -511,7 +512,9 @@ bot.action(/^order_realestate_(house|cust)_(.+)$/, async (ctx) => {
     const buyerUser = ctx.from.username ? `@${ctx.from.username}` : 'የለውም';
 
     if (type === 'cust') {
-      const { data } = await supabase.from('customer_products').select('*').eq('id', id).single();
+      const tableName = type === 'cust' ? 'customer_products' : 'houses';
+      const res = await pool.query(`SELECT * FROM ${tableName} WHERE id = $1`, [id]);
+      const prod = res.rows[0];
       if (!data) return ctx.reply('❌ መረጃው አልተገኘም!');
       prod = data;
       
