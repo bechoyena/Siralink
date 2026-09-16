@@ -1,5 +1,8 @@
 const express = require("express");
 const app = express();
+const PORT = process.env.PORT || 10000;
+app.get("/", (req, res) => res.send("Siralink Bot is Live!"));
+app.listen(PORT, "0.0.0.0", () => console.log("Server running on port " + PORT));
 const axios = require("axios");
 const { Telegraf, Markup } = require('telegraf');
 const { Pool } = require('pg');
@@ -14,7 +17,6 @@ const pool = new Pool({
 
 const userSessions = {};
 
-const PORT = process.env.PORT || 10000;
 app.get('/', (req, res) => res.send('Siralink Bot is Live!'));
 app.listen(PORT, '0.0.0.0', () => console.log(`Web Server running on port ${PORT}`));
 
@@ -622,7 +624,6 @@ bot.launch({ polling: { dropPendingUpdates: true } })
   .catch((err) => console.error(err));
 
 // Express Server ለ Render Health Check
-const PORT = process.env.PORT || 10000;
 app.get('/', (req, res) => res.send('Siralink Bot is Live & Active! 🚀'));
 app.listen(PORT, '0.0.0.0', () => console.log(`Keep-Alive Web Server running on port ${PORT}`));
 
