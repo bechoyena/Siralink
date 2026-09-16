@@ -262,7 +262,7 @@ bot.hears('📞 እኛን ያግኙ', (ctx) => {
 
 bot.start(async (ctx) => {
   if(userSessions[ctx.from.id]) delete userSessions[ctx.from.id];
-  try {await pool.query('INSERT INTO bot_users (chat_id) VALUES ($1) ON CONFLICT (chat_id) DO NOTHING', [ctx.from.id]); ],
+  try { await pool.query('INSERT INTO bot_users (chat_id) VALUES ($1) ON CONFLICT (chat_id) DO NOTHING', [ctx.from.id]); } catch (e) {}
   return ctx.reply('እንኳን ወደ Siralink መተግበሪያ ማውጫ በሰላም መጡ! 👋', mainKeyboard);
 });
 
