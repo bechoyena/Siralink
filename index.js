@@ -329,10 +329,12 @@ bot.on(['text', 'photo'], async (ctx, next) => {
     const defaultImg = generateMatchedImage(session.sellName, finalCat);
     
     try {
+// የቀደመውን pool.query አጥፍተህ በትክክለኛው Variables ተካው፡
 await pool.query(
   'INSERT INTO customer_products (name, price, category, description, shop_name_address, phone, image_url, owner_chat_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
-  [session.addProdName, session.addProdPrice, targetCustomerCategory, session.addProdDesc, session.addProdAddress, session.addProdPhone, session.addProdPhoto, ctx.from.id]
+  [session.sellName, session.sellPrice, finalCat, 'ያገለገለ ዕቃ', 'በቀጥታ ከደወሉበት', session.sellPhone, defaultImg, ctx.from.id]
 );
+
       autoBroadcastNewProduct(session.sellName, finalCat, session.sellPrice);
       await bot.telegram.sendMessage(ADMIN_CHAT_ID, `🔄 ያገለገለ ዕቃ ምዝገባ፡ ${session.sellName}\nዋጋ፡ ${session.sellPrice} ብር\nስልክ፡ ${session.sellPhone}`);
       await ctx.reply('🎉 ያገለገለው ዕቃዎ በተሳካ ሁኔታ ተመዝግቧል! አሁን (4.5) ውስጥ ይታያል።', mainKeyboard);
@@ -422,11 +424,14 @@ if (session.step === 'ADD_PROD_PHOTO') {
     if (!session.addProdPhoto) session.addProdPhoto = generateMatchedImage(session.addProdName, targetCustomerCategory);
 
     try {
-      await supabase.from('customer_products').insert([
-        { name: session.addProdName, price: session.addProdPrice, category: targetCustomerCategory, description: session.addProdDesc, shop_name_address: session.addProdAddress, phone: session.addProdPhone, image_url: session.addProdPhoto }
-      ]);
+// የቀደመውን supabase code አጥፍተህ በዚህ ተካው፡
+await pool.query(
+  'INSERT INTO customer_products (name, price, category, description, shop_name_address, phone, image_url, owner_chat_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+  [session.addProdName, session.addProdPrice, targetCustomerCategory, session.addProdDesc, session.addProdAddress, session.addProdPhone, session.addProdPhoto, ctx.from.id]
+);
       await bot.telegram.sendMessage(ADMIN_CHAT_ID, `➕ አዲስ እቃ ተጨመረ፡ ${session.addProdName}\nዋጋ፡ ${session.addProdPrice}\nምድብ፡ ${targetCustomerCategory}`);
       autoBroadcastNewProduct(session.addProdName, targetCustomerCategory, session.addProdPrice);
+    
       await ctx.reply(`🎉 ምርትዎ በተሳካ ሁኔታ ተመዝግቧል! አሁን በ "👥 ከደንበኞች የተጨመሩ" -> "${targetCustomerCategory}" ስር ይታያል።`, mainKeyboard);
     } catch (err) { await ctx.reply('❌ ምርቱን መመዝገብ አልተቻለም።', mainKeyboard); }
     delete userSessions[ctx.from.id];
@@ -512,11 +517,10 @@ bot.action(/^order_realestate_(house|cust)_(.+)$/, async (ctx) => {
     const buyerUser = ctx.from.username ? `@${ctx.from.username}` : 'የለውም';
 
     if (type === 'cust') {
-      const tableName = type === 'cust' ? 'customer_products' : 'houses';
+      const tableName = 'customer_products';
       const res = await pool.query(`SELECT * FROM ${tableName} WHERE id = $1`, [id]);
-      const prod = res.rows[0];
-      if (!data) return ctx.reply('❌ መረጃው አልተገኘም!');
-      prod = data;
+      prod = res.rows[0];
+      if (!prod) return ctx.reply('❌ መረጃው አልተገኘም!');
       
       alertMessage = `📌 [የቤት/መሬት ጥቆማ ግዢ ፍላጎት] 📌\n\nየተጠቆመው ዕቃ፡ ${prod.name}\nዋጋ፡ ${prod.price} ብር\n\n👤 ፈላጊ ደንበኛ፡ ${ctx.from.first_name} (${buyerUser})`;
       userGuide = `🎉 ለመግዛት/ለመከራየት ስላሳዩት ፍላጎት እናመሰግናለን!\n\nይህ መረጃ የጥቆማ መረጃ በመሆኑ የጠቋሚውን አድራሻና ስልክ ቁጥር በመጠቀም በቀጥታ ማግኘት ይችላሉ፦\n\n📞 ስልክ ቁጥር: ${prod.phone}\n🏢 መገኛ አድራሻ: ${prod.shop_name_address}`;
@@ -525,9 +529,9 @@ bot.action(/^order_realestate_(house|cust)_(.+)$/, async (ctx) => {
         try { await bot.telegram.sendMessage(Number(prod.owner_chat_id), `🔔 ማሳወቂያ፡ ለእርስዎ የቤት/መሬት ጥቆማ ግዢ ፈላጊ ደንበኛ መጥቷል!`); } catch(e){}
       }
     } else {
-      const { data } = await supabase.from('houses').select('*').eq('id', id).single();
-      if (!data) return ctx.reply('❌ መረጃው አልተገኘም!');
-      prod = data;
+      const res = await pool.query('SELECT * FROM houses WHERE id = $1', [id]);
+      prod = res.rows[0];
+      if (!prod) return ctx.reply('❌ መረጃው አልተገኘም!');
       
       alertMessage = `🏢 [በአስተዳዳሪው ለተመዘገበ ቤት/መሬት የትዕዛዝ ፍላጎት] 🏢\n\nቤት/መሬት፡ ${prod.name}\nዋጋ፡ ${prod.price} ብር\n👤 ፈላጊ ደንበኛ፡ ${ctx.from.first_name} (${buyerUser})`;
       userGuide = `🎉 የቤት/መሬት ግዥ/ኪራይ ፍላጎትዎ በተሳካ ሁኔታ ደርሶናል። የቤቱ/መሬቱ ባለቤት መረጃ ለማግኘት በሚከተለው ስልክ ይደውሉ፦\n\n📞 ስልክ ቁጥር፡ ${prod.phone || '0946662487'}`;
@@ -583,9 +587,11 @@ async function saveSubmittedTip(ctx, session) {
   const pDesc = `የጠቋሚ ስም: ${session.tipName} | ስፋት: ${session.tipArea} m² || टाइप:${session.tipFinalType}`;
   
   try {
-    await supabase.from('customer_products').insert([
-      { name: pName, price: session.tipPrice, category: finalCat, description: pDesc, shop_name_address: session.tipAddress, phone: session.tipPhone, image_url: defaultImg, owner_chat_id: ctx.from.id }
-    ]);
+// የቀደመውን supabase code አጥፍተህ በዚህ ተካው፡
+await pool.query(
+  'INSERT INTO customer_products (name, price, category, description, shop_name_address, phone, image_url, owner_chat_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+  [pName, session.tipPrice, finalCat, pDesc, session.tipAddress, session.tipPhone, defaultImg, ctx.from.id]
+);
     await bot.telegram.sendMessage(ADMIN_CHAT_ID, `📌 አዲስ ጥቆማ ገብቷል፡ ${pName}\nዋጋ፡ ${session.tipPrice} ብር\nጠቋሚ፡ ${session.tipName}`);
     autoBroadcastNewProduct(pName, finalCat, session.tipPrice);
     await ctx.editMessageText(`🎉 የጥቆማ መረጃዎ በተሳካ ሁኔታ እንደ *[${typeAmharic}]* ተመዝግቧል። አሁን (4.4) ውስጥ መመልከት ይቻላል።`);
@@ -606,10 +612,8 @@ bot.command('broadcast', async (ctx) => {
     : inputText;
   
   try {
-    const { data: users } = await pool.query(
-  'INSERT INTO bot_users (chat_id) VALUES ($1) ON CONFLICT (chat_id) DO NOTHING',
-  [ctx.from.id]
-);
+      const res = await pool.query('SELECT chat_id FROM bot_users');
+const users = res.rows;
     if (!users || users.length === 0) return ctx.reply('📢 ተጠቃሚዎች አልተገኙም።');
     let successCount = 0;
     for (let u of users) { 
